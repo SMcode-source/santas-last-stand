@@ -25,7 +25,7 @@ void vertex() {
 
 void fragment() {
 	// A negative mip bias keeps distant needles crisp instead of blurry.
-	vec4 tex = texture(branch_tex, UV, -0.6);
+	vec4 tex = texture(branch_tex, UV, -0.3);
 	// Both sides of a card use the same outward-facing normal, so the tree
 	// is lit as one soft volume instead of flat cards.
 	if (!FRONT_FACING) {
@@ -50,9 +50,6 @@ void fragment() {
 	float lod = max(0.0, 0.5 * log2(max(dot(dx, dx), dot(dy, dy))));
 	ALPHA = tex.a * (1.0 + min(lod, 4.0) * 0.12);
 	ALPHA_SCISSOR_THRESHOLD = 0.45;
-	// With MSAA on, needle edges are smoothed instead of stair-stepped.
-	ALPHA_ANTIALIASING_EDGE = 0.3;
-	ALPHA_TEXTURE_COORDINATE = texels;
 	ROUGHNESS = 0.8;
 	SPECULAR = 0.3;
 	BACKLIGHT = vec3(0.12, 0.2, 0.1) * (1.0 - mask);

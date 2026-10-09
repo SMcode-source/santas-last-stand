@@ -119,7 +119,7 @@ func _build_scene() -> void:
 		var basis := Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3.ONE * size)
 		placements[i % VARIANTS].append(Transform3D(basis, pos))
 	for v in VARIANTS:
-		var tree := WinterProps.fir_tree(VARIANT_HEIGHT, 20 + v, false, 0.5, 0.52)
+		var tree := WinterProps.fir_tree(VARIANT_HEIGHT, 20 + v, false, 0.85, 0.6)
 		var mesh: Mesh = (tree.get_node("Mesh") as MeshInstance3D).mesh
 		tree.free()
 		var forest_part := WinterProps.scatter(mesh, placements[v], false)

@@ -78,5 +78,5 @@ func _ready() -> void:
 		camera.position = Vector3(1.7, 1.45, 2.4)
 		camera.look_at(Vector3(0, 0.95, 0))
 	if face:
-		camera.position = Vector3(0.22, 1.68, 0.62)
-		camera.look_at(Vector3(0, 1.58, 0))
+		camera.position = Vector3(0.25, 1.72, 0.85)
+		camera.look_at(Vector3(0, 1.6, 0))

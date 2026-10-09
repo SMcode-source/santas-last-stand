@@ -40,20 +40,14 @@ static func fir_tree(height: float, seed := 1, decorated := false, detail := 1.0
 	var b := ToyBuilder.new()
 	var trunk_r := height * 0.022
 	var crown_base := height * 0.1
-	if decorated:
-		b.textured(ToyBuilder.cylinder(trunk_r * 0.25, trunk_r, height * 0.95, 8), "bark_brown_02",
-				ToyBuilder.xf(Vector3(0, height * 0.475, 0)), 0.8)
-		# Up close, a slim dark core hides the gaps deep inside the crown.
-		var core := ToyBuilder.lathe(PackedVector2Array([
-			Vector2(0, crown_base), Vector2(height * 0.08, crown_base + height * 0.04),
-			Vector2(height * 0.05, height * 0.5), Vector2(height * 0.015, height * 0.85), Vector2(0, height * 0.92),
-		]), 8)
-		b.add(core, Color("2a4632"))
-	else:
-		# From a distance a solid core shows through as a dark cone, so the
-		# trunk tapers away and the crown is filled with extra shoots instead.
-		b.textured(ToyBuilder.cylinder(trunk_r * 0.1, trunk_r, height * 0.6, 6), "bark_brown_02",
-				ToyBuilder.xf(Vector3(0, height * 0.3, 0)), 0.8)
+	b.textured(ToyBuilder.cylinder(trunk_r * 0.25, trunk_r, height * 0.95, 8), "bark_brown_02",
+			ToyBuilder.xf(Vector3(0, height * 0.475, 0)), 0.8)
+	# A slim dark core hides the gaps deep inside the crown.
+	var core := ToyBuilder.lathe(PackedVector2Array([
+		Vector2(0, crown_base), Vector2(height * 0.08, crown_base + height * 0.04),
+		Vector2(height * 0.05, height * 0.5), Vector2(height * 0.015, height * 0.85), Vector2(0, height * 0.92),
+	]), 8)
+	b.add(core, Color("2a4632"))
 
 	var foliage := _Foliage.new()
 	var whorls := int(round(lerpf(10.0, 22.0, detail) * clampf(height / 5.0, 0.7, 1.3)))
@@ -70,7 +64,7 @@ static func fir_tree(height: float, seed := 1, decorated := false, detail := 1.0
 			var tip := foliage.branch(Vector3(0, y + rng.randf_range(-0.03, 0.03) * height, 0), angle, droop, length, true)
 			tips.append(tip)
 			# Shorter inner shoots between the main branches fill out the crown.
-			if (detail >= 0.75 or not decorated) and k % 2 == 0:
+			if detail >= 0.75 and k % 2 == 0:
 				foliage.branch(Vector3(0, y + height * 0.025, 0), angle + PI / count, droop * 0.6, length * 0.6, false)
 	# Leader shoot at the very top
 	foliage.branch(Vector3(0, height * 0.9, 0), 0.0, -PI / 2.0 + 0.05, height * 0.12, true)
