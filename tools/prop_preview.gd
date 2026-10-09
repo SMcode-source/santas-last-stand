@@ -37,6 +37,7 @@ func _ready() -> void:
 	var node: Node3D
 	var size := 2.0
 	var distance := 0.0
+	var face := false
 	match prop:
 		"fir":
 			node = WinterProps.fir_tree(5.0, 21, false, 1.0)
@@ -49,6 +50,17 @@ func _ready() -> void:
 		"fir_decorated":
 			node = WinterProps.fir_tree(4.2, 7, true)
 			size = 4.2
+		"santa":
+			node = SantaToy.new()
+			size = 1.9
+		"santa_wave":
+			node = SantaToy.new()
+			node.ready.connect(node.wave)
+			size = 1.9
+		"santa_face":
+			node = SantaToy.new()
+			size = 1.9
+			face = true
 		"cabin":
 			node = WinterProps.log_cabin()
 			size = 5.0
@@ -62,3 +74,9 @@ func _ready() -> void:
 	if distance > 0.0:
 		camera.position = Vector3(0, 1.9, distance)
 	camera.look_at(Vector3(0, size * 0.42, 0))
+	if prop.begins_with("santa") and not face:
+		camera.position = Vector3(1.7, 1.45, 2.4)
+		camera.look_at(Vector3(0, 0.95, 0))
+	if face:
+		camera.position = Vector3(0.22, 1.68, 0.62)
+		camera.look_at(Vector3(0, 1.58, 0))

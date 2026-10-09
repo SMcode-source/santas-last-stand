@@ -3,7 +3,7 @@
 shader_type spatial;
 render_mode cull_disabled;
 
-uniform sampler2D branch_tex : source_color, filter_linear_mipmap, repeat_disable;
+uniform sampler2D branch_tex : source_color, filter_linear_mipmap_anisotropic, repeat_disable;
 uniform vec3 needle_tint : source_color = vec3(1.0);
 uniform float snow_amount : hint_range(0.0, 1.0) = 0.5;
 uniform sampler2D snow_albedo : source_color, filter_linear_mipmap, repeat_enable;
@@ -24,16 +24,21 @@ void vertex() {
 }
 
 void fragment() {
-	vec4 tex = texture(branch_tex, UV);
+	// A negative mip bias keeps distant needles crisp instead of blurry.
+	vec4 tex = texture(branch_tex, UV, -0.6);
 	// Both sides of a card use the same outward-facing normal, so the tree
 	// is lit as one soft volume instead of flat cards.
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;
 	}
-	vec3 col = tex.rgb * needle_tint * mix(0.85, 1.15, variation);
+	// Needles deep inside the crown (near the trunk, UV.x = 0) sit in shade,
+	// which gives distant, unshadowed trees their depth.
+	float inner = smoothstep(0.0, 0.85, UV.x);
+	vec3 col = tex.rgb * needle_tint * mix(0.85, 1.15, variation) * mix(0.4, 1.0, inner);
 	float noise = texture(snow_albedo, world_pos.xz * 0.8).r;
 	// Snow clings in patches on the upper sides of branches, not everywhere.
 	float up = world_normal.y * 0.5 + (noise - 0.5) * 1.4 + (tex.g - 0.25) * 0.6;
+	up -= (1.0 - inner) * 0.3;
 	float threshold = 1.0 - snow_amount;
 	float mask = smoothstep(threshold, threshold + 0.15, up) * step(0.001, snow_amount);
 	ALBEDO = mix(col, vec3(0.86, 0.9, 0.97), mask);
@@ -43,8 +48,11 @@ void fragment() {
 	vec2 dx = dFdx(texels);
 	vec2 dy = dFdy(texels);
 	float lod = max(0.0, 0.5 * log2(max(dot(dx, dx), dot(dy, dy))));
-	ALPHA = tex.a * (1.0 + lod * 0.25);
+	ALPHA = tex.a * (1.0 + min(lod, 4.0) * 0.12);
 	ALPHA_SCISSOR_THRESHOLD = 0.45;
+	// With MSAA on, needle edges are smoothed instead of stair-stepped.
+	ALPHA_ANTIALIASING_EDGE = 0.3;
+	ALPHA_TEXTURE_COORDINATE = texels;
 	ROUGHNESS = 0.8;
 	SPECULAR = 0.3;
 	BACKLIGHT = vec3(0.12, 0.2, 0.1) * (1.0 - mask);

@@ -78,9 +78,9 @@ func _build_scene() -> void:
 	_place(WinterProps.lamp_post(), Vector3(-2.3, 0, 1.2))
 	_place(WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
 	_place(WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
-	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("2e86de")), Vector3(-0.95, 0, 0.6), 18)
-	_place(WinterProps.present(Vector3(0.4, 0.32, 0.4), Color("27ae60"), Color("d4202f")), Vector3(0.95, 0, 0.75), -22)
-	_place(WinterProps.present(Vector3(0.32, 0.55, 0.32), Color("8e44ad")), Vector3(1.25, 0, 0.1), 40)
+	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("2e86de")), Vector3(-1.15, 0, 0.0), 18)
+	_place(WinterProps.present(Vector3(0.4, 0.32, 0.4), Color("27ae60"), Color("d4202f")), Vector3(1.05, 0, 0.3), -22)
+	_place(WinterProps.present(Vector3(0.32, 0.55, 0.32), Color("8e44ad")), Vector3(1.4, 0, -0.35), 40)
 	_place(WinterProps.present(Vector3(0.7, 0.4, 0.55), Color("d4202f"), Color("f7f4ee")), Vector3(3.0, 0, -2.2), 10)
 
 	# Campfire with a bench, a woodcutter's corner, and the cabin's yard clutter
@@ -119,7 +119,7 @@ func _build_scene() -> void:
 		var basis := Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3.ONE * size)
 		placements[i % VARIANTS].append(Transform3D(basis, pos))
 	for v in VARIANTS:
-		var tree := WinterProps.fir_tree(VARIANT_HEIGHT, 20 + v, false, 0.5)
+		var tree := WinterProps.fir_tree(VARIANT_HEIGHT, 20 + v, false, 0.5, 0.52)
 		var mesh: Mesh = (tree.get_node("Mesh") as MeshInstance3D).mesh
 		tree.free()
 		var forest_part := WinterProps.scatter(mesh, placements[v], false)
@@ -196,8 +196,8 @@ func _process(delta: float) -> void:
 func _update_camera() -> void:
 	# Slow, gentle orbit around Santa.
 	var angle := sin(_time * 0.15) * 0.35
-	_camera.position = Vector3(sin(angle) * 5.2, 1.9, cos(angle) * 5.2)
-	_camera.look_at(Vector3(0, 1.15, 0))
+	_camera.position = Vector3(sin(angle) * 3.7, 1.55, cos(angle) * 3.7)
+	_camera.look_at(Vector3(0, 1.12, 0))
 
 
 func _unhandled_input(event: InputEvent) -> void:

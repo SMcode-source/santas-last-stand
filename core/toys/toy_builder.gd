@@ -18,6 +18,7 @@ static var _material_cache := {}
 static var _front_sign := 0.0
 static var _unit_sphere: SphereMesh
 static var _shape_cache := {}
+static var _strand_patterns := {}
 
 ## Bucket key -> _Bucket. Keys: "painted", "glow", or "tex|<set>|<tile>|<tint>|<snow>".
 var _buckets := {}
@@ -61,6 +62,88 @@ func textured(mesh: Mesh, texture_set: String, xform := Transform3D.IDENTITY,
 		tile_size := 1.0, tint := Color.WHITE, snow := 0.0) -> ToyBuilder:
 	var key := "tex|%s|%s|%s|%s" % [texture_set, tile_size, tint.to_html(), snow]
 	return _append(_bucket(key), mesh, Color.WHITE, xform)
+
+
+## Adds `mesh` in a colour with a character finish: "velvet", "fur", "hair",
+## "skin", "leather", "metal" or "eye" (see CharacterFinish).
+func finished(mesh: Mesh, color: Color, finish: String, xform := Transform3D.IDENTITY) -> ToyBuilder:
+	return _append(_bucket("fin|" + finish), mesh, color, xform)
+
+
+## Like finished(), but each vertex is coloured by `paint(position)`, e.g.
+## skin with rosy cheeks that blend smoothly into the rest of the face.
+func painted_finish(mesh: Mesh, paint: Callable, finish: String, xform := Transform3D.IDENTITY) -> ToyBuilder:
+	var bucket := _bucket("fin|" + finish)
+	var start := bucket.colors.size()
+	_append(bucket, mesh, Color.WHITE, xform)
+	for i in range(start, bucket.verts.size()):
+		bucket.colors[i] = (paint.call(bucket.verts[i]) as Color).srgb_to_linear()
+	return self
+
+
+## Adds one tapered hair or fur strand through `points`, shading from
+## `root_color` to `tip_color`. Written straight into the mesh with no
+## intermediate shapes, because beards and fur trims use thousands of them.
+## With a `volume_centre`, normals point away from it so a mass of strands is
+## lit as one soft volume (a beard, a fur trim) instead of thousands of facets.
+func strand(points: PackedVector3Array, root_radius: float, tip_radius: float,
+		root_color: Color, tip_color: Color, finish := "hair", sides := 4,
+		volume_centre := Vector3.INF) -> ToyBuilder:
+	var bucket := _bucket("fin|" + finish)
+	var base := bucket.verts.size()
+	_strand_rings(bucket, points, root_radius, tip_radius, root_color, tip_color, sides)
+	if volume_centre.is_finite():
+		for i in points.size():
+			var out := (points[i] - volume_centre).normalized()
+			for k in sides:
+				var v := base + i * sides + k
+				bucket.normals[v] = (out + bucket.normals[v] * 0.35).normalized()
+	var pattern := _strand_pattern(points.size(), sides)
+	var start := bucket.indices.size()
+	bucket.indices.resize(start + pattern.size())
+	for k in pattern.size():
+		bucket.indices[start + k] = pattern[k] + base
+	return self
+
+
+static func _strand_rings(bucket: _Bucket, points: PackedVector3Array, root_radius: float,
+		tip_radius: float, root_color: Color, tip_color: Color, sides: int) -> void:
+	var n := points.size()
+	var normal := Vector3.ZERO
+	for i in n:
+		var t := float(i) / (n - 1)
+		var tangent := (points[mini(i + 1, n - 1)] - points[maxi(i - 1, 0)]).normalized()
+		if i == 0:
+			normal = tangent.cross(Vector3.UP if absf(tangent.y) < 0.95 else Vector3.RIGHT).normalized()
+		else:
+			normal = (normal - tangent * normal.dot(tangent)).normalized()
+		var binormal := tangent.cross(normal)
+		var radius := lerpf(root_radius, tip_radius, t)
+		var color := root_color.lerp(tip_color, t).srgb_to_linear()
+		for s in sides:
+			var angle := TAU * s / sides
+			var dir := normal * cos(angle) + binormal * sin(angle)
+			bucket.verts.append(points[i] + dir * radius)
+			bucket.normals.append(dir)
+			bucket.colors.append(color)
+
+
+## Triangle indices for a strand of `points` rings with `sides` each. Every
+## strand's frame has the same handedness, so one pattern serves them all.
+static func _strand_pattern(points: int, sides: int) -> PackedInt32Array:
+	var key := points * 100 + sides
+	if not _strand_patterns.has(key):
+		var probe := _Bucket.new()
+		var line := PackedVector3Array()
+		for i in points:
+			line.append(Vector3(0.1 * i, i, 0.0))
+		_strand_rings(probe, line, 1.0, 1.0, Color.WHITE, Color.WHITE, sides)
+		for i in points - 1:
+			for s in sides:
+				var s2 := (s + 1) % sides
+				_quad(probe, i * sides + s, i * sides + s2, (i + 1) * sides + s, (i + 1) * sides + s2)
+		_strand_patterns[key] = probe.indices
+	return _strand_patterns[key]
 
 
 func _bucket(key: String) -> _Bucket:
@@ -190,6 +273,8 @@ func build(outline := 0.012, node_name := "Toy") -> MeshInstance3D:
 static func _material_for(key: String, outline: float) -> Material:
 	if key == "glow":
 		return glow_material()
+	if key.begins_with("fin|"):
+		return CharacterFinish.material(key.get_slice("|", 1))
 	if key == "painted":
 		return toon_material(outline) if cartoon_shading else PbrLibrary.painted()
 	var parts := key.split("|")
@@ -323,6 +408,43 @@ static func lathe(profile: PackedVector2Array, segments := 24) -> ArrayMesh:
 		for s in segments:
 			var s2 := (s + 1) % segments
 			_quad(b, i * segments + s, i * segments + s2, (i + 1) * segments + s, (i + 1) * segments + s2)
+	return b.to_mesh()
+
+
+## Skins a stack of closed rings (each with the same number of points, bottom
+## to top) into a smooth surface with capped ends, e.g. a coat with a belly.
+static func loft(rings: Array[PackedVector3Array]) -> ArrayMesh:
+	var b := _Bucket.new()
+	var count := rings.size()
+	var seg := rings[0].size()
+	var centres := PackedVector3Array()
+	for i in count:
+		var centre := Vector3.ZERO
+		for p in rings[i]:
+			centre += p
+		centres.append(centre / seg)
+		for s in seg:
+			var along := rings[i][(s + 1) % seg] - rings[i][(s + seg - 1) % seg]
+			var up := rings[mini(i + 1, count - 1)][s] - rings[maxi(i - 1, 0)][s]
+			var n := along.cross(up).normalized()
+			if n.dot(rings[i][s] - centres[i]) < 0.0:
+				n = -n
+			b.verts.append(rings[i][s])
+			b.normals.append(n)
+	for i in count - 1:
+		for s in seg:
+			var s2 := (s + 1) % seg
+			_quad(b, i * seg + s, i * seg + s2, (i + 1) * seg + s, (i + 1) * seg + s2)
+	for end: int in [0, count - 1]:
+		var outward := Vector3.DOWN if end == 0 else Vector3.UP
+		var centre := b.verts.size()
+		b.verts.append(centres[end])
+		b.normals.append(outward)
+		for s in seg:
+			b.verts.append(rings[end][s])
+			b.normals.append(outward)
+		for s in seg:
+			_tri(b, centre, centre + 1 + s, centre + 1 + (s + 1) % seg)
 	return b.to_mesh()
 
 
