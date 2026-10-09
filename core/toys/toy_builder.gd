@@ -19,7 +19,7 @@ static var _front_sign := 0.0
 static var _unit_sphere: SphereMesh
 static var _shape_cache := {}
 
-## Bucket key -> _Bucket. Keys: "painted", "glow", or "tex|<set>|<tile>|<tint>".
+## Bucket key -> _Bucket. Keys: "painted", "glow", or "tex|<set>|<tile>|<tint>|<snow>".
 var _buckets := {}
 
 
@@ -56,9 +56,10 @@ func add(mesh: Mesh, color: Color, xform := Transform3D.IDENTITY, glow := false)
 
 
 ## Adds `mesh` using a realistic texture set from assets/textures.
+## `snow` above 0 lets snow settle on the upward-facing parts.
 func textured(mesh: Mesh, texture_set: String, xform := Transform3D.IDENTITY,
-		tile_size := 1.0, tint := Color.WHITE) -> ToyBuilder:
-	var key := "tex|%s|%s|%s" % [texture_set, tile_size, tint.to_html()]
+		tile_size := 1.0, tint := Color.WHITE, snow := 0.0) -> ToyBuilder:
+	var key := "tex|%s|%s|%s|%s" % [texture_set, tile_size, tint.to_html(), snow]
 	return _append(_bucket(key), mesh, Color.WHITE, xform)
 
 
@@ -192,6 +193,9 @@ static func _material_for(key: String, outline: float) -> Material:
 	if key == "painted":
 		return toon_material(outline) if cartoon_shading else PbrLibrary.painted()
 	var parts := key.split("|")
+	var snow := float(parts[4])
+	if snow > 0.0:
+		return PbrLibrary.snowy(parts[1], float(parts[2]), Color.html(parts[3]), snow)
 	return PbrLibrary.material(parts[1], float(parts[2]), Color.html(parts[3]))
 
 
@@ -319,6 +323,73 @@ static func lathe(profile: PackedVector2Array, segments := 24) -> ArrayMesh:
 		for s in segments:
 			var s2 := (s + 1) % segments
 			_quad(b, i * segments + s, i * segments + s2, (i + 1) * segments + s, (i + 1) * segments + s2)
+	return b.to_mesh()
+
+
+## Pushes vertices in and out along their normals with smooth 3D noise, so
+## shapes look natural rather than machine-made (snow drifts, fur, branches).
+static func lumpy(mesh: Mesh, amount: float, frequency := 4.0, seed := 1) -> ArrayMesh:
+	var src := _arrays_of(mesh)
+	var noise := FastNoiseLite.new()
+	noise.seed = seed
+	noise.frequency = frequency
+	var verts: PackedVector3Array = src[0].duplicate()
+	var normals: PackedVector3Array = src[1]
+	for i in verts.size():
+		verts[i] += normals[i] * noise.get_noise_3dv(verts[i]) * amount
+	var b := _Bucket.new()
+	b.verts = verts
+	b.normals = normals
+	b.indices = src[2]
+	return b.to_mesh()
+
+
+## A closed ring of snow, as if lying along a branch tier, rim or brim.
+static func snow_ring(radius: float, thickness: float, segments := 16) -> ArrayMesh:
+	var t := thickness
+	return lathe(PackedVector2Array([
+		Vector2(radius - t, t * 0.6), Vector2(radius - t * 0.2, -t * 0.1), Vector2(radius + t * 0.5, t * 0.25),
+		Vector2(radius + t * 0.2, t * 0.9), Vector2(radius - t * 0.6, t * 1.1), Vector2(radius - t, t * 0.6),
+	]), segments)
+
+
+## A soft, lumpy blanket of snow lying on a flat `size` area (x by z), about
+## `thickness` deep, that rounds off and droops over its edges.
+static func snow_sheet(size: Vector2, thickness: float, seed := 1, cell := 0.12) -> ArrayMesh:
+	var noise := FastNoiseLite.new()
+	noise.seed = seed
+	noise.frequency = 1.6
+	var half := size / 2.0
+	var lip := thickness * 1.2
+	var nx := int((size.x + lip * 2.0) / cell) + 1
+	var nz := int((size.y + lip * 2.0) / cell) + 1
+	var b := _Bucket.new()
+	var heights := PackedFloat32Array()
+	for j in nz + 1:
+		for i in nx + 1:
+			var x := lerpf(-half.x - lip, half.x + lip, float(i) / nx)
+			var z := lerpf(-half.y - lip, half.y + lip, float(j) / nz)
+			var inside := minf(half.x - absf(x), half.y - absf(z))
+			var y: float
+			if inside >= 0.0:
+				y = thickness * smoothstep(0.0, thickness * 2.5, inside) * (1.0 + noise.get_noise_2d(x, z) * 0.35)
+				y = maxf(y, thickness * 0.15)
+			else:
+				# Past the edge the snow curls down over it.
+				y = thickness * 0.15 - thickness * 1.3 * smoothstep(0.0, lip, -inside)
+			heights.append(y)
+			b.verts.append(Vector3(x, y, z))
+	var row := nx + 1
+	for j in nz + 1:
+		for i in nx + 1:
+			var l := heights[j * row + maxi(i - 1, 0)]
+			var r := heights[j * row + mini(i + 1, nx)]
+			var d := heights[maxi(j - 1, 0) * row + i]
+			var u := heights[mini(j + 1, nz) * row + i]
+			b.normals.append(Vector3(l - r, 2.0 * cell, d - u).normalized())
+	for j in nz:
+		for i in nx:
+			_quad(b, j * row + i, j * row + i + 1, (j + 1) * row + i, (j + 1) * row + i + 1)
 	return b.to_mesh()
 
 

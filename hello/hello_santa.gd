@@ -53,9 +53,12 @@ func _build_environment() -> void:
 	moon.light_energy = 1.6
 	moon.shadow_enabled = true
 	moon.shadow_blur = 1.5
-	moon.directional_shadow_max_distance = 40.0
+	moon.directional_shadow_max_distance = 22.0
+	moon.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	add_child(moon)
 	moon.look_at_from_position(Vector3(-6, 10, 8), Vector3.ZERO)
+
+	add_child(GraphicsQuality.new(env, moon))
 
 	_camera = Camera3D.new()
 	_camera.fov = 45
@@ -70,48 +73,83 @@ func _build_scene() -> void:
 	add_child(_santa)
 
 	_place(WinterProps.log_cabin(), Vector3(-4.2, 0, -5.5), 22)
-	_place(WinterProps.pine_tree(4.2, 7, true), Vector3(3.4, 0, -3.6))
-	_place(WinterProps.snowman(), Vector3(2.6, 0, 1.0), -35)
+	_place(WinterProps.fir_tree(4.2, 7, true, 0.85), Vector3(3.6, 0, -3.8))
+	_place(WinterProps.snowman(), Vector3(3.3, 0, 0.2), -40)
 	_place(WinterProps.lamp_post(), Vector3(-2.3, 0, 1.2))
-	_place(WinterProps.lamp_post(), Vector3(5.8, 0, -0.5))
 	_place(WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
 	_place(WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
-	_place(WinterProps.candy_cane(1.1), Vector3(-1.2, 0, 2.6), 160)
-	_place(WinterProps.candy_cane(1.1), Vector3(1.3, 0, 2.7), 20)
 	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("2e86de")), Vector3(-0.95, 0, 0.6), 18)
 	_place(WinterProps.present(Vector3(0.4, 0.32, 0.4), Color("27ae60"), Color("d4202f")), Vector3(0.95, 0, 0.75), -22)
 	_place(WinterProps.present(Vector3(0.32, 0.55, 0.32), Color("8e44ad")), Vector3(1.25, 0, 0.1), 40)
-	_place(WinterProps.present(Vector3(0.7, 0.4, 0.55), Color("d4202f"), Color("f7f4ee")), Vector3(3.0, 0, -2.0), 10)
+	_place(WinterProps.present(Vector3(0.7, 0.4, 0.55), Color("d4202f"), Color("f7f4ee")), Vector3(3.0, 0, -2.2), 10)
+
+	# Campfire with a bench, a woodcutter's corner, and the cabin's yard clutter
+	_place(WinterProps.campfire(), Vector3(1.9, 0, -2.3))
+	_place(PbrLibrary.model("painted_wooden_bench", 0.5), Vector3(2.0, 0, -3.5), 10)
+	_place(PbrLibrary.model("tree_stump_01", 0.45), Vector3(-2.6, 0, -2.4), 40)
+	var axe := PbrLibrary.model("wooden_axe", 0.2)
+	_place(axe, Vector3(-2.55, 0.42, -2.35), 70)
+	axe.rotation_degrees.z = 18
+	_place(PbrLibrary.model("dry_branches_medium_01", 0.4), Vector3(-3.4, 0, -1.6), 120)
+	_place(PbrLibrary.model("wooden_crate_01", 0.5), Vector3(-1.6, 0, -4.3), -15)
+	_place(PbrLibrary.model("wine_barrel_01", 0.5), Vector3(-1.1, 0, -5.0), 0)
+	_place(PbrLibrary.model("wooden_bucket_01", 0.4), Vector3(-0.6, 0, -4.5), 30)
+	_place(PbrLibrary.model("dead_tree_trunk", 0.5), Vector3(-6.0, 0.05, 1.0), 35)
+
+	# Boulders and mossy rocks half-buried in the snow
+	_place(PbrLibrary.model("namaqualand_boulder_04", 0.55), Vector3(6.8, -0.5, -6.5), 30)
+	_place(PbrLibrary.model("namaqualand_boulder_02", 0.55), Vector3(-7.5, -0.2, -6.0), 200)
+	_place(PbrLibrary.model("rock_moss_set_01", 0.6), Vector3(8.5, -0.3, -1.5), 75)
+	_place(PbrLibrary.model("namaqualand_boulder_04", 0.6), Vector3(-9.5, -0.6, 2.0), 120)
 
 	# A forest of snowy pines behind, and mountains on the horizon.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1225
+	# Four tree designs, each drawn many times in one batch.
+	const VARIANTS := 4
+	const VARIANT_HEIGHT := 5.0
+	var placements: Array[Array] = []
+	for v in VARIANTS:
+		placements.append([] as Array[Transform3D])
 	for i in 26:
 		var angle := PI * (1.05 + 0.9 * i / 25.0) + rng.randf_range(-0.05, 0.05)
 		var dist := rng.randf_range(9.0, 20.0)
 		var pos := Vector3(cos(angle) * dist * 1.4, 0, sin(angle) * dist - 1.0)
-		_place(WinterProps.pine_tree(rng.randf_range(3.0, 6.5), i + 20), pos, rng.randf_range(0, 360))
-	for i in 6:
-		var angle := PI * (1.1 + 0.8 * i / 5.0)
-		var pos := Vector3(cos(angle) * 75.0, 0, sin(angle) * 55.0 - 10.0)
-		_place(WinterProps.mountain(rng.randf_range(18.0, 30.0), i + 3), pos, rng.randf_range(0, 360))
+		var size := rng.randf_range(3.0, 6.5) / VARIANT_HEIGHT
+		var basis := Basis(Vector3.UP, rng.randf_range(0, TAU)).scaled(Vector3.ONE * size)
+		placements[i % VARIANTS].append(Transform3D(basis, pos))
+	for v in VARIANTS:
+		var tree := WinterProps.fir_tree(VARIANT_HEIGHT, 20 + v, false, 0.5)
+		var mesh: Mesh = (tree.get_node("Mesh") as MeshInstance3D).mesh
+		tree.free()
+		var forest_part := WinterProps.scatter(mesh, placements[v], false)
+		forest_part.name = "Forest%d" % v
+		add_child(forest_part)
+	add_child(WinterProps.mountain_range())
 
 	# Falling snow
 	var snow := CPUParticles3D.new()
-	snow.amount = 600
+	snow.amount = 400
 	snow.lifetime = 7.0
 	snow.preprocess = 7.0
-	snow.position = Vector3(0, 8, -2)
+	snow.position = Vector3(0, 8, -4.5)
 	snow.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-	snow.emission_box_extents = Vector3(14, 0.5, 10)
+	snow.emission_box_extents = Vector3(14, 0.5, 8)
 	snow.direction = Vector3(0.1, -1, 0)
 	snow.spread = 15
 	snow.initial_velocity_min = 0.8
 	snow.initial_velocity_max = 1.3
 	snow.gravity = Vector3(0, -0.2, 0)
-	var flake := ToyBuilder.sphere(0.035, 4)
+	snow.scale_amount_min = 0.6
+	snow.scale_amount_max = 1.4
+	var flake := QuadMesh.new()
+	flake.size = Vector2.ONE * 0.07
 	var flake_mat := StandardMaterial3D.new()
 	flake_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	flake_mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	flake_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	flake_mat.albedo_texture = WinterProps.soft_dot()
+	flake_mat.albedo_color = Color(0.95, 0.97, 1.0, 0.9)
 	flake.material = flake_mat
 	snow.mesh = flake
 	add_child(snow)

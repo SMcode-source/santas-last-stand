@@ -12,3 +12,26 @@ All from https://polyhaven.com, licensed CC0 (public domain), downloaded 9 Oct 2
 | `textures/brown_planks_04` | https://polyhaven.com/a/brown_planks_04 |
 | `textures/bark_brown_02` | https://polyhaven.com/a/bark_brown_02 |
 | `textures/old_stone_wall` | https://polyhaven.com/a/old_stone_wall |
+| `textures/rock_face_03` | https://polyhaven.com/a/rock_face_03 |
+
+## Models: Poly Haven (CC0 1.0)
+All from https://polyhaven.com, licensed CC0 (public domain), downloaded 9 Oct 2026 at 1K resolution. Some were decimated in Blender (`tools/blender/optimize_model.py`) to lighten them for the web.
+
+| File in `models/` | Source |
+|---|---|
+| `namaqualand_boulder_02.glb` | https://polyhaven.com/a/namaqualand_boulder_02 |
+| `namaqualand_boulder_04.glb` | https://polyhaven.com/a/namaqualand_boulder_04 |
+| `rock_moss_set_01.glb` | https://polyhaven.com/a/rock_moss_set_01 |
+| `tree_stump_01.glb` | https://polyhaven.com/a/tree_stump_01 |
+| `dead_tree_trunk.glb` | https://polyhaven.com/a/dead_tree_trunk |
+| `dry_branches_medium_01.glb` | https://polyhaven.com/a/dry_branches_medium_01 |
+| `wooden_crate_01.glb` | https://polyhaven.com/a/wooden_crate_01 |
+| `wine_barrel_01.glb` | https://polyhaven.com/a/wine_barrel_01 |
+| `wooden_bucket_01.glb` | https://polyhaven.com/a/wooden_bucket_01 |
+| `wooden_axe.glb` | https://polyhaven.com/a/wooden_axe |
+| `stone_fire_pit.glb` | https://polyhaven.com/a/stone_fire_pit |
+| `painted_wooden_bench.glb` | https://polyhaven.com/a/painted_wooden_bench |
+| `wooden_lantern_01.glb` | https://polyhaven.com/a/wooden_lantern_01 |
+
+## Generated in-house
+- `textures/generated/fir_branch.png`: fir needle cards, drawn by `tools/make_textures.gd`. No third-party content.
