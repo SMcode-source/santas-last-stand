@@ -20,6 +20,8 @@ const SHADOWS_ON_HIGH := "shadows_on_high"
 ## Decorative lights switched off at Low. The Compatibility renderer draws
 ## everything an omni light touches once more, so each one is costly.
 const LIGHTS_ABOVE_LOW := "lights_above_low"
+## Extra set dressing (saplings and the like) hidden at Low.
+const DETAIL_ABOVE_LOW := "detail_above_low"
 ## Nodes in this group get apply_quality(level) whenever the level changes.
 const LISTENERS := "graphics_quality_listeners"
 
@@ -80,6 +82,8 @@ func apply() -> void:
 	_sun.shadow_enabled = level != Level.LOW
 	for node in get_tree().get_nodes_in_group(LIGHTS_ABOVE_LOW):
 		(node as Light3D).visible = level != Level.LOW
+	for node in get_tree().get_nodes_in_group(DETAIL_ABOVE_LOW):
+		(node as Node3D).visible = level != Level.LOW
 	# Real shadows from the background forest only on High; lower levels rely
 	# on the shading painted into the foliage shader.
 	var casting := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if level == Level.HIGH \

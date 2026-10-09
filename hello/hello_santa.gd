@@ -72,7 +72,10 @@ func _build_environment() -> void:
 
 
 func _build_scene() -> void:
-	add_child(WinterProps.snow_ground())
+	# Boot prints from the cabin door, round the woodpile, to where Santa stands.
+	var trail := PackedVector2Array([Vector2(-3.45, -3.5), Vector2(-2.5, -3.45), Vector2(-1.5, -3.0),
+			Vector2(-0.8, -2.0), Vector2(-0.4, -1.0), Vector2(-0.12, -0.3)])
+	add_child(WinterProps.snow_ground(120.0, 80, 7.0, 1, 4, trail))
 
 	santa = SantaModel.new()
 	add_child(santa)
@@ -91,10 +94,9 @@ func _build_scene() -> void:
 	# Campfire with a bench, a woodcutter's corner, and the cabin's yard clutter
 	_place(WinterProps.campfire(), Vector3(1.9, 0, -2.3))
 	_place(PbrLibrary.model("painted_wooden_bench", 0.5), Vector3(2.0, 0, -3.5), 10)
-	_place(PbrLibrary.model("tree_stump_01", 0.45), Vector3(-2.6, 0, -2.4), 40)
-	var axe := PbrLibrary.model("wooden_axe", 0.2)
-	_place(axe, Vector3(-2.55, 0.42, -2.35), 70)
-	axe.rotation_degrees.z = 18
+	var stump := PbrLibrary.model("tree_stump_01", 0.45)
+	_place(stump, Vector3(-2.6, 0, -2.4), 40)
+	stump.add_child(_axe_in_stump(stump.rotation.y))
 	_place(PbrLibrary.model("dry_branches_medium_01", 0.4), Vector3(-3.4, 0, -1.6), 120)
 	_place(PbrLibrary.model("wooden_crate_01", 0.5), Vector3(-1.6, 0, -4.3), -15)
 	_place(PbrLibrary.model("wine_barrel_01", 0.5), Vector3(-1.1, 0, -5.0), 0)
@@ -132,6 +134,8 @@ func _build_scene() -> void:
 		forest_part.add_to_group(GraphicsQuality.SHADOWS_ON_HIGH)
 		add_child(forest_part)
 	add_child(_tree_shadows(placements, VARIANT_HEIGHT))
+	add_child(_saplings(placements, VARIANT_HEIGHT, rng))
+	add_child(_ground_details(placements, VARIANT_HEIGHT, rng))
 	add_child(WinterProps.mountain_range())
 
 	# Falling snow
@@ -160,6 +164,89 @@ func _build_scene() -> void:
 	flake.material = flake_mat
 	snow.mesh = flake
 	add_child(snow)
+
+
+## The woodcutter's axe, its blade bitten into the top of the stump and the
+## handle rising out of it towards the camera's right. In the model the handle
+## runs along +y with the head at the top and the cutting edge facing +z.
+func _axe_in_stump(stump_yaw: float) -> Node3D:
+	var axe := PbrLibrary.model("wooden_axe", 0.2)
+	var out := Vector3(1, 0, 0.35).normalized().rotated(Vector3.UP, -stump_yaw)
+	var lift := deg_to_rad(35.0)
+	var head_dir := -(out * cos(lift) + Vector3.UP * sin(lift))
+	var edge_dir := (Vector3.DOWN - head_dir * Vector3.DOWN.dot(head_dir)).normalized()
+	var basis := Basis(head_dir.cross(edge_dir), head_dir, edge_dir)
+	# The middle of the cutting edge, sunk a few centimetres into the stump top.
+	var edge := Vector3(0, 0.37, 0.17)
+	axe.transform = Transform3D(basis, Vector3(-0.03, 0.29, 0.02) - basis * edge)
+	return axe
+
+
+## A few young firs growing between the background trees.
+func _saplings(placements: Array[Array], tree_height: float, rng: RandomNumberGenerator) -> MultiMeshInstance3D:
+	var spots: Array[Transform3D] = []
+	for group: Array in placements:
+		for i in range(0, group.size(), 2):
+			var t: Transform3D = group[i]
+			var away := rng.randf() * TAU
+			var size := t.basis.get_scale().x * tree_height
+			spots.append(Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.7, 1.2)),
+					t.origin + Vector3(cos(away), 0, sin(away)) * size * rng.randf_range(0.6, 0.9)))
+	var sapling := WinterProps.fir_tree(1.3, 31, false, 0.5, 0.7)
+	var mesh: Mesh = (sapling.get_node("Mesh") as MeshInstance3D).mesh
+	sapling.free()
+	var saplings := WinterProps.scatter(mesh, spots, false)
+	saplings.name = "Saplings"
+	saplings.add_to_group(GraphicsQuality.DETAIL_ABOVE_LOW)
+	return saplings
+
+
+## Everything small on the ground, built into one mesh so it costs only a few
+## draw calls: snow heaped round the trees and pine cones under them, stones,
+## dry grass and twigs breaking up the open snow, and wood chips and halved
+## logs round the chopping stump.
+func _ground_details(placements: Array[Array], tree_height: float, rng: RandomNumberGenerator) -> MeshInstance3D:
+	var b := ToyBuilder.new()
+	for group: Array in placements:
+		for t: Transform3D in group:
+			var size := t.basis.get_scale().x * tree_height
+			var spin := Basis(Vector3.UP, rng.randf() * TAU)
+			WinterProps.add_snow_mound(b, Transform3D(spin.scaled(Vector3(size * 0.16, size * 0.12, size * 0.16)),
+					t.origin + Vector3(0, -0.05, 0)), rng.randi())
+			var a := rng.randf() * TAU
+			WinterProps.add_pine_cone(b, Transform3D(Basis(Vector3.UP, rng.randf() * TAU),
+					t.origin + Vector3(cos(a), 0, sin(a)) * size * rng.randf_range(0.2, 0.45)))
+	var counts := [22, 44, 14]
+	for kind in counts.size():
+		var placed := 0
+		while placed < counts[kind]:
+			var a := rng.randf_range(PI * 0.95, PI * 2.05)
+			var r := rng.randf_range(2.0, 16.0)
+			var at := Vector3(cos(a) * r * 1.3, 0, sin(a) * r * 0.9 + 1.5)
+			# Keep clear of the cabin, the campfire, Santa's spot and the camera.
+			if at.distance_to(Vector3(-4.2, 0, -5.5)) < 3.4 or at.distance_to(Vector3(1.9, 0, -2.3)) < 1.6 					or at.distance_to(Vector3.ZERO) < 1.6 or at.z > 0.8:
+				continue
+			var spot := Transform3D(Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3.ONE * rng.randf_range(0.6, 1.5)), at)
+			match kind:
+				0: WinterProps.add_buried_rock(b, spot, placed)
+				1: WinterProps.add_dry_grass(b, spot, placed % 6)
+				2: WinterProps.add_fallen_twig(b, spot, placed)
+			placed += 1
+	# Wood chips and halved logs round the chopping stump
+	var stump := Vector3(-2.6, 0, -2.4)
+	for k in 16:
+		var a := rng.randf() * TAU
+		var r := rng.randf_range(0.75, 1.3)
+		var size := Vector3(rng.randf_range(0.04, 0.09), 0.012, rng.randf_range(0.02, 0.04))
+		b.textured(ToyBuilder.box(size), "wood_trunk_wall", ToyBuilder.xf(stump + Vector3(cos(a) * r, 0.01, sin(a) * r),
+				Vector3(rng.randf_range(-15, 15), rng.randf() * 360.0, 0)), 0.3, Color("e0c49c"))
+	for k in 2:
+		b.textured(ToyBuilder.cylinder(0.11, 0.11, 0.4, 10), "bark_brown_02",
+				ToyBuilder.xf(stump + Vector3(0.9 + k * 0.25, 0.07, 0.55 - k * 0.3), Vector3(90, 30 + k * 50, 0), Vector3(1, 1, 0.55)),
+				0.4, Color.WHITE, 0.5)
+	var details := b.build(0.0, "GroundDetails")
+	details.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return details
 
 
 ## Soft shadows on the snow under the background trees, cast away from the

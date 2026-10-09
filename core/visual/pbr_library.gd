@@ -80,6 +80,7 @@ static func snow_ground() -> ShaderMaterial:
 		mat.set_shader_parameter("snow_albedo", load(dir + "albedo.jpg"))
 		mat.set_shader_parameter("snow_normal", load(dir + "normal.jpg"))
 		mat.set_shader_parameter("snow_roughness", load(dir + "roughness.jpg"))
+		mat.set_shader_parameter("noise_tex", CharacterFinish.noise())
 		_cache["snow_ground"] = mat
 	return _cache["snow_ground"]
 

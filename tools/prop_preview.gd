@@ -61,6 +61,15 @@ func _ready() -> void:
 			node = SantaToy.new()
 			size = 1.9
 			face = true
+		"lamp":
+			node = WinterProps.lamp_post()
+			size = 3.4
+		"fence":
+			node = WinterProps.fence(4.0)
+			size = 1.6
+		"snowman":
+			node = WinterProps.snowman()
+			size = 2.4
 		"cabin":
 			node = WinterProps.log_cabin()
 			size = 5.0

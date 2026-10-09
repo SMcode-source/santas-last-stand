@@ -223,15 +223,24 @@ static func snowman(seed := 1) -> Node3D:
 			ToyBuilder.xf(Vector3(0.0, 1.71, 0.4), Vector3(84, 0, 6)))
 	# Knitted scarf with a hanging tail
 	var knit := ToyBuilder.lumpy(ToyBuilder.torus(0.25, 0.06, 28, 10), 0.012, 22.0, seed)
-	b.add(knit, BERRY.darkened(0.15), ToyBuilder.xf(Vector3(0, 1.46, 0)))
-	b.add(ToyBuilder.lumpy(ToyBuilder.curve(PackedVector3Array([
+	b.finished(knit, BERRY.darkened(0.15), "velvet", ToyBuilder.xf(Vector3(0, 1.46, 0)))
+	b.finished(ToyBuilder.lumpy(ToyBuilder.curve(PackedVector3Array([
 		Vector3(0.15, 1.44, 0.2), Vector3(0.23, 1.25, 0.32), Vector3(0.21, 1.03, 0.38),
-	]), PackedFloat32Array([0.055, 0.05, 0.045]), 10), 0.01, 22.0, seed + 2), BERRY.darkened(0.15))
+	]), PackedFloat32Array([0.055, 0.05, 0.045]), 10), 0.01, 22.0, seed + 2), BERRY.darkened(0.15), "velvet")
+	# Tassels on the scarf end
+	for k in 5:
+		b.finished(ToyBuilder.cylinder(0.006, 0.004, 0.07, 4), BERRY.darkened(0.25), "velvet",
+				ToyBuilder.xf(Vector3(0.19 + k * 0.012, 0.98, 0.38 + k * 0.004), Vector3(0, 0, k * 4 - 8)))
 	# Battered top hat
 	var felt := Color("1d1b1c")
-	b.part(ToyBuilder.cylinder(0.3, 0.3, 0.03, 28), felt, Vector3(0, 1.96, 0), Vector3(0, 0, -6))
-	b.part(ToyBuilder.cylinder(0.19, 0.18, 0.32, 28), felt, Vector3(0.015, 2.13, 0), Vector3(0, 0, -6))
-	b.part(ToyBuilder.cylinder(0.185, 0.185, 0.06, 28), BERRY.darkened(0.3), Vector3(0.01, 2.02, 0), Vector3(0, 0, -6))
+	b.finished(ToyBuilder.cylinder(0.3, 0.3, 0.03, 28), felt, "velvet", ToyBuilder.xf(Vector3(0, 1.96, 0), Vector3(0, 0, -6)))
+	b.finished(ToyBuilder.cylinder(0.19, 0.18, 0.32, 28), felt, "velvet", ToyBuilder.xf(Vector3(0.015, 2.13, 0), Vector3(0, 0, -6)))
+	b.finished(ToyBuilder.cylinder(0.185, 0.185, 0.06, 28), BERRY.darkened(0.3), "velvet", ToyBuilder.xf(Vector3(0.01, 2.02, 0), Vector3(0, 0, -6)))
+	# A sprig of holly tucked in the hat band
+	for k in 3:
+		b.finished(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 8), 0.15, 3.0, k), PINE.darkened(0.35), "eye",
+				ToyBuilder.xf(Vector3(-0.1 + k * 0.03, 2.05, 0.195), Vector3(70, k * 50 - 50, 0), Vector3(0.05, 0.012, 0.022)))
+		b.finished(ToyBuilder.sphere(0.014, 8), BERRY, "eye", ToyBuilder.xf(Vector3(-0.07 + k * 0.015, 2.04 + (k % 2) * 0.02, 0.21)))
 	b.textured(ToyBuilder.snow_sheet(Vector2(0.3, 0.3), 0.05, seed + 7, 0.04), "snow_02",
 			ToyBuilder.xf(Vector3(0.03, 2.29, 0), Vector3(0, 0, -6)), 1.5, SNOW_TINT)
 	var root := Node3D.new()
@@ -592,21 +601,48 @@ static func lamp_post() -> Node3D:
 	var root := Node3D.new()
 	root.name = "LampPost"
 	var b := ToyBuilder.new()
-	b.part(ToyBuilder.cylinder(0.12, 0.18, 0.25, 12), IRON, Vector3(0, 0.12, 0))
-	b.part(ToyBuilder.cylinder(0.05, 0.06, 2.6, 10), IRON, Vector3(0, 1.4, 0))
-	b.part(ToyBuilder.sphere(0.08), IRON, Vector3(0, 0.9, 0))
-	b.part(ToyBuilder.cylinder(0.12, 0.09, 0.08, 10), IRON, Vector3(0, 2.72, 0))
+	# Cast-iron post: a stepped, fluted base, a ringed shaft and a decorative collar.
+	var iron := Color("23282a")
+	b.finished(ToyBuilder.cylinder(0.15, 0.2, 0.1, 16), iron, "metal", ToyBuilder.xf(Vector3(0, 0.05, 0)))
+	b.finished(ToyBuilder.cylinder(0.1, 0.14, 0.3, 16), iron, "metal", ToyBuilder.xf(Vector3(0, 0.25, 0)))
+	for k in 8:
+		var a := TAU * k / 8.0
+		b.finished(ToyBuilder.box(Vector3(0.025, 0.28, 0.025)), iron, "metal",
+				ToyBuilder.xf(Vector3(cos(a) * 0.115, 0.25, sin(a) * 0.115), Vector3(0, -rad_to_deg(a), 0)))
+	b.finished(ToyBuilder.cylinder(0.045, 0.06, 2.4, 12), iron, "metal", ToyBuilder.xf(Vector3(0, 1.6, 0)))
+	for ring_y in [0.45, 0.9, 2.62]:
+		b.finished(ToyBuilder.torus(0.06, 0.018, 16, 6), iron, "metal", ToyBuilder.xf(Vector3(0, ring_y, 0)))
+	b.finished(ToyBuilder.sphere(0.075, 14), iron, "metal", ToyBuilder.xf(Vector3(0, 0.9, 0)))
+	b.finished(ToyBuilder.cylinder(0.13, 0.08, 0.1, 12), iron, "metal", ToyBuilder.xf(Vector3(0, 2.76, 0)))
+	# Lantern: a glowing mantle behind six warm, slightly frosted glass panes.
 	var lantern := Vector3(0, 2.98, 0)
-	b.part(ToyBuilder.cylinder(0.12, 0.1, 0.36, 6), WARM_LIGHT, lantern, Vector3.ZERO, Vector3.ONE, true)
+	b.part(ToyBuilder.sphere(0.05, 10), Color("fff0c8"), lantern, Vector3.ZERO, Vector3(1, 1.4, 1), true)
+	b.part(ToyBuilder.cylinder(0.115, 0.095, 0.34, 6), Color("e09a48"), lantern, Vector3(0, 30, 0), Vector3.ONE, true)
 	for k in 6:
-		var a := TAU * k / 6.0 + PI / 6.0
-		b.part(ToyBuilder.box(Vector3(0.025, 0.4, 0.025)), IRON, lantern + Vector3(cos(a) * 0.12, 0, sin(a) * 0.12))
-	b.part(ToyBuilder.cylinder(0.0, 0.2, 0.18, 6), IRON, lantern + Vector3(0, 0.27, 0))
-	b.part(ToyBuilder.sphere(0.035), IRON, lantern + Vector3(0, 0.38, 0))
-	b.fluff_blob(lantern + Vector3(0, 0.27, 0), Vector3(0.12, 0.03, 0.12), 0.05, SNOW, 6, 9)
-	# Holly ribbon around the post
-	b.part(ToyBuilder.torus(0.075, 0.03, 14, 6), PINE, Vector3(0, 2.3, 0))
-	b.part(ToyBuilder.sphere(0.035), BERRY, Vector3(0, 2.3, 0.1))
+		var a := TAU * k / 6.0
+		b.finished(ToyBuilder.box(Vector3(0.022, 0.4, 0.022)), iron, "metal",
+				ToyBuilder.xf(lantern + Vector3(cos(a) * 0.115, 0, sin(a) * 0.115)))
+	b.finished(ToyBuilder.cylinder(0.14, 0.13, 0.03, 6), iron, "metal", ToyBuilder.xf(lantern + Vector3(0, -0.2, 0), Vector3(0, 30, 0)))
+	b.finished(ToyBuilder.cylinder(0.0, 0.21, 0.18, 6), iron, "metal", ToyBuilder.xf(lantern + Vector3(0, 0.29, 0), Vector3(0, 30, 0)))
+	b.finished(ToyBuilder.sphere(0.035, 10), iron, "metal", ToyBuilder.xf(lantern + Vector3(0, 0.4, 0)))
+	b.textured(ToyBuilder.lumpy(ToyBuilder.cylinder(0.05, 0.22, 0.1, 12), 0.012, 9.0, 5), "snow_02",
+			ToyBuilder.xf(lantern + Vector3(0, 0.27, 0)), 1.5, SNOW_TINT)
+	# A holly garland wound round the post, with berries and a velvet bow.
+	var holly := ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 8), 0.15, 3.0, 4)
+	for k in 26:
+		var t := k / 25.0
+		var a := t * TAU * 2.0
+		var at := Vector3(cos(a) * 0.07, 1.75 + t * 0.6, sin(a) * 0.07)
+		b.finished(holly, PINE.darkened(0.35), "eye",
+				ToyBuilder.xf(at, Vector3(k * 37 % 90, -rad_to_deg(a) + k * 23, 30), Vector3(0.05, 0.012, 0.025)))
+		if k % 3 == 0:
+			b.finished(ToyBuilder.sphere(0.014, 8), BERRY, "eye", ToyBuilder.xf(at + Vector3(cos(a) * 0.03, 0.01, sin(a) * 0.03)))
+	for sx: float in [-1.0, 1.0]:
+		b.finished(ToyBuilder.torus(0.026, 0.016, 12, 6), BERRY, "velvet",
+				ToyBuilder.xf(Vector3(sx * 0.035, 2.38, 0.07), Vector3(90, 0, sx * 12), Vector3(1.4, 0.8, 0.8)))
+		b.finished(ToyBuilder.box(Vector3(0.025, 0.1, 0.006)), BERRY, "velvet",
+				ToyBuilder.xf(Vector3(sx * 0.018, 2.33, 0.075), Vector3(0, 0, sx * 14)))
+	b.finished(ToyBuilder.sphere(0.017, 10), BERRY.darkened(0.1), "velvet", ToyBuilder.xf(Vector3(0, 2.38, 0.08)))
 	root.add_child(b.build(0.01, "Mesh"))
 	var light := OmniLight3D.new()
 	light.light_color = WARM_LIGHT
@@ -652,14 +688,34 @@ static func candy_cane(height := 1.2) -> Node3D:
 static func fence(length := 4.0) -> Node3D:
 	var b := ToyBuilder.new()
 	var posts := int(length / 0.5) + 1
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(length * 100.0)
 	for k in posts:
 		var x := k * 0.5 - length / 2.0
-		b.textured(ToyBuilder.box(Vector3(0.1, 0.9, 0.08)), "brown_planks_04", ToyBuilder.xf(Vector3(x, 0.45, 0)), 0.8)
-		b.part(ToyBuilder.cylinder(0.0, 0.07, 0.1, 4), LOG, Vector3(x, 0.95, 0), Vector3(0, 45, 0))
-		b.part(ToyBuilder.sphere(1.0, 8), SNOW, Vector3(x, 0.96, 0), Vector3.ZERO, Vector3(0.07, 0.05, 0.07))
+		# Weathered pickets, each a little different in height and lean.
+		var h := rng.randf_range(0.84, 0.95)
+		var lean := Vector3(rng.randf_range(-2.0, 2.0), 0, rng.randf_range(-2.5, 2.5))
+		var grey := Color("e4dfd8")
+		b.textured(ToyBuilder.box(Vector3(0.1, h, 0.035)), "brown_planks_04", ToyBuilder.xf(Vector3(x, h / 2.0, 0), lean), 0.8, grey)
+		var tip := Basis.from_euler(lean * PI / 180.0) * Vector3(0, h, 0)
+		b.textured(ToyBuilder.cylinder(0.0, 0.071, 0.09, 4), "brown_planks_04",
+				ToyBuilder.xf(Vector3(x, 0, 0) + tip + Vector3(0, 0.04, 0), lean + Vector3(0, 45, 0), Vector3(1, 1, 0.35)), 0.8, grey)
+		b.textured(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 8), 0.2, 3.0, k), "snow_02",
+				ToyBuilder.xf(Vector3(x, 0, 0) + tip + Vector3(0, 0.08, 0), Vector3.ZERO, Vector3(0.06, 0.035, 0.035)), 1.0, SNOW_TINT)
+		for ny in [0.3, 0.7]:
+			b.finished(ToyBuilder.sphere(0.008, 6), Color("3a3330"), "metal", ToyBuilder.xf(Vector3(x, ny, 0.02)))
+		# Snow banked against the foot of each post.
+		b.textured(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 8), 0.25, 2.0, k + 50), "snow_02",
+				ToyBuilder.xf(Vector3(x, 0, 0.02), Vector3(0, k * 40, 0), Vector3(0.16, 0.09, 0.12)), 1.5, SNOW_TINT)
 	for y in [0.3, 0.7]:
-		b.textured(ToyBuilder.box(Vector3(length + 0.1, 0.08, 0.05)), "brown_planks_04", ToyBuilder.xf(Vector3(0, y, -0.06)), 0.8, Color("9a7a60"))
-		b.textured(ToyBuilder.box(Vector3(length + 0.1, 0.04, 0.07)), "snow_02", ToyBuilder.xf(Vector3(0, y + 0.06, -0.06)), 1.0, SNOW_TINT)
+		b.textured(ToyBuilder.box(Vector3(length + 0.1, 0.08, 0.04)), "brown_planks_04", ToyBuilder.xf(Vector3(0, y, -0.04)), 0.8, Color("9a7a60"))
+		# A soft, uneven ridge of snow along the top of each rail.
+		var ridge := PackedVector3Array()
+		var radii := PackedFloat32Array()
+		for k in 17:
+			ridge.append(Vector3(lerpf(-length / 2.0 - 0.04, length / 2.0 + 0.04, k / 16.0), y + 0.045, -0.04))
+			radii.append(rng.randf_range(0.022, 0.034) * (0.4 if k == 0 or k == 16 else 1.0))
+		b.textured(ToyBuilder.tube(ridge, radii, 6), "snow_02", ToyBuilder.xf(Vector3.ZERO, Vector3.ZERO, Vector3(1, 0.7, 1)), 1.0, SNOW_TINT)
 	var root := Node3D.new()
 	root.name = "Fence"
 	root.add_child(b.build(0.01, "Mesh"))
@@ -723,7 +779,22 @@ static func mountain_range(inner := 80.0, outer := 160.0, peak := 24.0, seed := 
 
 ## Gently rolling snowy ground, flat around the origin so characters stand level.
 ## Split into tiles so a lamp only makes the renderer redraw the tiles it reaches.
-static func snow_ground(size := 120.0, resolution := 80, flat_radius := 7.0, seed := 1, tiles := 4) -> Node3D:
+## `trail` is an optional walked path (x, z points) pressed with boot prints.
+static func snow_ground(size := 120.0, resolution := 80, flat_radius := 7.0, seed := 1, tiles := 4,
+		trail := PackedVector2Array()) -> Node3D:
+	var material := PbrLibrary.snow_ground()
+	if not trail.is_empty():
+		material = material.duplicate()
+		var points := trail.duplicate()
+		points.resize(12)
+		material.set_shader_parameter("trail", points)
+		material.set_shader_parameter("trail_count", mini(trail.size(), 12))
+		var lo := trail[0]
+		var hi := trail[0]
+		for point in trail:
+			lo = lo.min(point)
+			hi = hi.max(point)
+		material.set_shader_parameter("trail_bounds", Vector4(lo.x - 0.4, lo.y - 0.4, hi.x + 0.4, hi.y + 0.4))
 	var noise := FastNoiseLite.new()
 	noise.seed = seed
 	noise.frequency = 0.04
@@ -769,12 +840,72 @@ static func snow_ground(size := 120.0, resolution := 80, flat_radius := 7.0, see
 			arrays[Mesh.ARRAY_INDEX] = indices
 			var grid := ArrayMesh.new()
 			grid.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-			grid.surface_set_material(0, PbrLibrary.snow_ground())
+			grid.surface_set_material(0, material)
 			var tile := MeshInstance3D.new()
 			tile.name = "Tile%d_%d" % [tx, tz]
 			tile.mesh = grid
 			root.add_child(tile)
 	return root
+
+
+## Small ground details, added straight into a shared builder so a whole
+## field of them costs only a handful of draw calls.
+
+## A stone half-buried in snow, with a cap of snow on top.
+static func add_buried_rock(b: ToyBuilder, at: Transform3D, seed := 1) -> void:
+	b.textured(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 8), 0.3, 1.6, seed % 4), "rock_face_03",
+			at * ToyBuilder.xf(Vector3(0, 0.02, 0), Vector3(0, seed * 47, 8), Vector3(0.22, 0.12, 0.17)), 0.6, Color("b4b2ad"), 0.6)
+	b.textured(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 8), 0.3, 2.0, seed % 4 + 9), "snow_02",
+			at * ToyBuilder.xf(Vector3.ZERO, Vector3.ZERO, Vector3(0.3, 0.06, 0.25)), 1.5, SNOW_TINT)
+
+
+## A tuft of dry winter grass poking up through the snow.
+static func add_dry_grass(b: ToyBuilder, at: Transform3D, seed := 1) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	for k in 9:
+		var a := rng.randf() * TAU
+		var tilt := rng.randf_range(8.0, 30.0)
+		var h := rng.randf_range(0.12, 0.3)
+		var straw := Color("a08a5c").lerp(Color("6b5a3e"), rng.randf())
+		var base := Vector3(cos(a), 0, sin(a)) * rng.randf_range(0.0, 0.04)
+		var rot := Vector3(sin(a) * tilt, 0, -cos(a) * tilt)
+		b.add(ToyBuilder.cylinder(0.0, 0.006, h, 3), straw,
+				at * Transform3D(Basis.from_euler(rot * PI / 180.0), base) * ToyBuilder.xf(Vector3(0, h / 2.0, 0)))
+	b.textured(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 6), 0.3, 2.0, 3), "snow_02",
+			at * ToyBuilder.xf(Vector3.ZERO, Vector3.ZERO, Vector3(0.09, 0.03, 0.08)), 1.5, SNOW_TINT)
+
+
+## A fallen twig with a side shoot, half sunk in the snow.
+static func add_fallen_twig(b: ToyBuilder, at: Transform3D, seed := 1) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed
+	var length := rng.randf_range(0.35, 0.6)
+	var bend := rng.randf_range(-0.06, 0.06)
+	b.textured(ToyBuilder.curve(PackedVector3Array([
+		Vector3(-length / 2.0, 0.0, 0), Vector3(0, 0.015, bend), Vector3(length / 2.0, 0.005, 0),
+	]), PackedFloat32Array([0.012, 0.009, 0.004]), 5, 3), "bark_brown_02", at, 0.3)
+	b.textured(ToyBuilder.curve(PackedVector3Array([
+		Vector3(0.02, 0.012, bend), Vector3(0.08, 0.02, bend + 0.06), Vector3(0.13, 0.015, bend + 0.09),
+	]), PackedFloat32Array([0.006, 0.004, 0.002]), 4, 3), "bark_brown_02", at, 0.3)
+
+
+## A pine cone lying in the snow, scales spiralling round a core.
+static func add_pine_cone(b: ToyBuilder, at: Transform3D) -> void:
+	b.textured(ToyBuilder.sphere(1.0, 6), "bark_brown_02",
+			at * ToyBuilder.xf(Vector3(0, 0.02, 0), Vector3.ZERO, Vector3(0.026, 0.026, 0.048)), 0.3)
+	for k in 8:
+		var a := k * 2.4
+		var z := lerpf(-0.036, 0.036, k / 7.0)
+		var r := 0.026 * sqrt(1.0 - pow(z / 0.05, 2.0))
+		b.textured(ToyBuilder.box(Vector3(0.016, 0.004, 0.014)), "bark_brown_02",
+				at * ToyBuilder.xf(Vector3(cos(a) * r, 0.02 + sin(a) * r, z), Vector3(0, 0, rad_to_deg(a) + 90)), 0.3)
+
+
+## A soft mound of snow heaped round the foot of a tree.
+static func add_snow_mound(b: ToyBuilder, at: Transform3D, seed := 1) -> void:
+	b.textured(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 12), 0.18, 1.8, seed % 3), "snow_02",
+			at * ToyBuilder.xf(Vector3.ZERO, Vector3.ZERO, Vector3(1.0, 0.25, 1.0)), 1.5, SNOW_TINT)
 
 
 ## Draws many copies of one mesh in a single batch (forests, rocks, fence posts).
