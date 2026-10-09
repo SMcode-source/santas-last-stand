@@ -84,9 +84,10 @@ func _process(delta: float) -> void:
 		# Forearm hangs on from the upper arm, the elbow bent a little forward.
 		var fore_dir := (arm_dir * cos(ELBOW_BEND) + Vector3.BACK * sin(ELBOW_BEND)).normalized()
 		if side < 0.0 and wave_amount > 0.0:
-			# Right upper arm out to the side, forearm up beside the head, swinging.
-			var wave_arm := Vector3(-0.9, 0.12, 0.25).normalized()
-			var wave_fore := Vector3(-0.2, 1.0, 0.2).normalized().rotated(Vector3.BACK, sin(_time * 9.0) * 0.4)
+			# Elbow kept low and forward (raising it to the shoulder tears the
+			# coat open under the arm), forearm up and swinging.
+			var wave_arm := Vector3(-0.55, -0.6, 0.45).normalized()
+			var wave_fore := Vector3(-0.05, 1.0, 0.3).normalized().rotated(Vector3.BACK, sin(_time * 9.0) * 0.35)
 			arm_dir = arm_dir.slerp(wave_arm, wave_amount)
 			fore_dir = fore_dir.slerp(wave_fore, wave_amount)
 		_aim_arm(prefix, arm_dir, fore_dir)
