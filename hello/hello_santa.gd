@@ -83,10 +83,10 @@ func _build_scene() -> void:
 	_place(WinterProps.lamp_post(), Vector3(-2.3, 0, 1.2))
 	_place(WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
 	_place(WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
-	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("2e86de")), Vector3(-1.15, 0, 0.0), 18)
-	_place(WinterProps.present(Vector3(0.4, 0.32, 0.4), Color("27ae60"), Color("d4202f")), Vector3(1.05, 0, 0.3), -22)
-	_place(WinterProps.present(Vector3(0.32, 0.55, 0.32), Color("8e44ad")), Vector3(1.4, 0, -0.35), 40)
-	_place(WinterProps.present(Vector3(0.7, 0.4, 0.55), Color("d4202f"), Color("f7f4ee")), Vector3(3.0, 0, -2.2), 10)
+	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, 1), Vector3(-1.15, 0, 0.0), 18)
+	_place(WinterProps.present(Vector3(0.4, 0.32, 0.4), Color("1e6b3c"), Color("b3202c"), GiftBox.Pattern.TARTAN, 2), Vector3(1.05, 0, 0.3), -22)
+	_place(WinterProps.present(Vector3(0.32, 0.55, 0.32), Color("5b2a6e"), Color("e8e2d4"), GiftBox.Pattern.DOTS, 3), Vector3(1.4, 0, -0.35), 40)
+	_place(WinterProps.present(Vector3(0.7, 0.4, 0.55), Color("b3202c"), Color("f4efe6"), GiftBox.Pattern.STRIPES, 4), Vector3(3.0, 0, -2.2), 10)
 
 	# Campfire with a bench, a woodcutter's corner, and the cabin's yard clutter
 	_place(WinterProps.campfire(), Vector3(1.9, 0, -2.3))

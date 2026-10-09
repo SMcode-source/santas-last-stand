@@ -4,6 +4,7 @@ extends Node
 ##   -- --wave   makes the model wave
 ##   -- --clip=Walking   plays one of its animation clips
 ##   -- --close  frames the model alone, close up
+##   -- --tight  frames his chest, beard and sleeve, for checking fabric detail
 
 const BACKDROP := preload("res://hello/hello_santa.tscn")
 
@@ -17,7 +18,10 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var santa: SantaModel = backdrop.santa
 	var camera: Camera3D = backdrop.camera
-	if "--close" in args:
+	if "--tight" in args:
+		camera.position = Vector3(0.15, 1.3, 0.95)
+		camera.look_at(Vector3(0.05, 1.2, 0))
+	elif "--close" in args:
 		camera.position = Vector3(0, 1.45, 2.2)
 		camera.look_at(Vector3(0, 1.05, 0))
 	else:

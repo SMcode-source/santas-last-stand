@@ -20,6 +20,8 @@ const SHADOWS_ON_HIGH := "shadows_on_high"
 ## Decorative lights switched off at Low. The Compatibility renderer draws
 ## everything an omni light touches once more, so each one is costly.
 const LIGHTS_ABOVE_LOW := "lights_above_low"
+## Nodes in this group get apply_quality(level) whenever the level changes.
+const LISTENERS := "graphics_quality_listeners"
 
 ## Average frame time (ms) above which we drop a level: about 45 fps.
 const SLOW_FRAME_MS := 22.0
@@ -89,6 +91,8 @@ func apply() -> void:
 	viewport.msaa_3d = Viewport.MSAA_2X
 	_fit_resolution()
 	Engine.set_meta("graphics_quality", Level.keys()[level].capitalize())
+	Engine.set_meta("graphics_level", level)
+	get_tree().call_group(LISTENERS, "apply_quality", level)
 
 
 func _fit_resolution() -> void:

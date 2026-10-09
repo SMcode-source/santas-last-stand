@@ -506,20 +506,8 @@ static func lamp_post() -> Node3D:
 
 
 ## A wrapped present with ribbon and bow.
-static func present(size: Vector3, color: Color, ribbon := GOLD) -> Node3D:
-	var b := ToyBuilder.new()
-	b.part(ToyBuilder.box(size), color, Vector3(0, size.y / 2.0, 0))
-	b.part(ToyBuilder.box(Vector3(size.x * 0.18, size.y + 0.01, size.z + 0.01)), ribbon, Vector3(0, size.y / 2.0, 0))
-	b.part(ToyBuilder.box(Vector3(size.x + 0.01, size.y + 0.01, size.z * 0.18)), ribbon, Vector3(0, size.y / 2.0, 0))
-	var top := Vector3(0, size.y + 0.02, 0)
-	var loop := minf(size.x, size.z) * 0.22
-	b.part(ToyBuilder.torus(loop, loop * 0.3, 14, 6), ribbon, top + Vector3(-loop * 0.8, loop * 0.5, 0), Vector3(90, 0, 35), Vector3(1, 1, 0.7))
-	b.part(ToyBuilder.torus(loop, loop * 0.3, 14, 6), ribbon, top + Vector3(loop * 0.8, loop * 0.5, 0), Vector3(90, 0, -35), Vector3(1, 1, 0.7))
-	b.part(ToyBuilder.sphere(loop * 0.45), ribbon, top + Vector3(0, loop * 0.2, 0))
-	var root := Node3D.new()
-	root.name = "Present"
-	root.add_child(b.build(0.01, "Mesh"))
-	return root
+static func present(size: Vector3, color: Color, ribbon := GOLD, pattern := -1, seed := 1) -> Node3D:
+	return GiftBox.build(size, color, ribbon, pattern, seed)
 
 
 ## A red-and-white striped candy cane.

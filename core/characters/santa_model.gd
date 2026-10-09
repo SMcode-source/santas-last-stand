@@ -6,6 +6,10 @@ extends Node3D
 ## around. hop() and wave() match SantaToy so the two are interchangeable.
 
 const SCENE := preload("res://assets/characters/santa.glb")
+const FABRIC := preload("res://core/visual/santa_fabric.gdshader")
+const FUR_SHELL := preload("res://core/visual/santa_fur_shell.gdshader")
+## Layers of fluff on the fur trim and beard, per graphics level (Low, Medium, High).
+const FUR_LAYERS := [0, 3, 5]
 const LOOPING := ["Walking", "Running"]
 
 ## How far the arms hang out from the body when idle (his belly needs room).
@@ -19,6 +23,11 @@ var _time := 0.0
 var _hop := 0.0
 var _wave := 0.0
 var _model: Node3D
+var _fabric: ShaderMaterial
+# Just the fur trim, beard and bobble, cut out of the body mesh so the layers of
+# fluff only redraw those few triangles.
+var _fur: MeshInstance3D
+static var _fur_mesh: ArrayMesh
 var _bones := {}
 # Rest orientations in skeleton space, captured once.
 var _rest_global := {}
@@ -28,6 +37,9 @@ func _ready() -> void:
 	name = "Santa"
 	_model = SCENE.instantiate()
 	add_child(_model)
+	_dress()
+	add_to_group(GraphicsQuality.LISTENERS)
+	apply_quality(Engine.get_meta("graphics_level", GraphicsQuality.Level.MEDIUM))
 	skeleton = _model.find_children("*", "Skeleton3D", true, false)[0]
 	animations = _model.find_children("*", "AnimationPlayer", true, false)[0]
 	for clip in LOOPING:
@@ -39,6 +51,107 @@ func _ready() -> void:
 		_bones[bone] = index
 		_rest_global[bone] = skeleton.get_bone_global_rest(index).basis.orthonormalized()
 	_process(0.0)
+
+
+## Swaps the model's plain material for velvet and fur, keeping its textures.
+func _dress() -> void:
+	var mesh: MeshInstance3D = _model.find_children("*", "MeshInstance3D", true, false)[0]
+	var plain := mesh.mesh.surface_get_material(0) as StandardMaterial3D
+	_fabric = ShaderMaterial.new()
+	_fabric.shader = FABRIC
+	_fabric.set_shader_parameter("albedo_tex", plain.albedo_texture)
+	_fabric.set_shader_parameter("orm_tex", plain.roughness_texture)
+	_fabric.set_shader_parameter("normal_tex", plain.normal_texture)
+	_fabric.set_shader_parameter("noise_tex", CharacterFinish.noise())
+	_fabric.set_shader_parameter("cell_tex", CharacterFinish.cells())
+	mesh.set_surface_override_material(0, _fabric)
+
+	if _fur_mesh == null:
+		_fur_mesh = _cut_fur(mesh.mesh as ArrayMesh, plain.albedo_texture.get_image())
+	_fur = MeshInstance3D.new()
+	_fur.name = "Fur"
+	_fur.mesh = _fur_mesh
+	_fur.skin = mesh.skin
+	_fur.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mesh.add_sibling(_fur)
+	_fur.transform = mesh.transform
+	_fur.skeleton = _fur.get_path_to(mesh.get_node(mesh.skeleton))
+
+
+## Called by GraphicsQuality: more layers of fluff on faster machines.
+func apply_quality(level: int) -> void:
+	var count: int = FUR_LAYERS[level]
+	_fur.visible = count > 0
+	var first: ShaderMaterial = null
+	var previous: ShaderMaterial = null
+	for i in count:
+		var shell := ShaderMaterial.new()
+		shell.shader = FUR_SHELL
+		shell.set_shader_parameter("albedo_tex", _fabric.get_shader_parameter("albedo_tex"))
+		shell.set_shader_parameter("noise_tex", CharacterFinish.noise())
+		shell.set_shader_parameter("cell_tex", CharacterFinish.cells())
+		shell.set_shader_parameter("layer", float(i + 1) / count)
+		if previous:
+			previous.next_pass = shell
+		else:
+			first = shell
+		previous = shell
+	_fur.material_override = first
+
+
+## The triangles of `source` whose texture is white or pale grey (fur, beard,
+## bobble), with their skinning, as a mesh of their own.
+static func _cut_fur(source: ArrayMesh, albedo: Image) -> ArrayMesh:
+	if albedo.is_compressed():
+		albedo.decompress()
+	albedo.resize(256, 256, Image.INTERPOLATE_BILINEAR)
+	albedo.convert(Image.FORMAT_RGB8)
+	var pixels := albedo.get_data()
+	var arrays := source.surface_get_arrays(0)
+	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
+	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	var is_fur := PackedByteArray()
+	is_fur.resize(uvs.size())
+	for v in uvs.size():
+		var x := clampi(int(fposmod(uvs[v].x, 1.0) * 256.0), 0, 255)
+		var y := clampi(int(fposmod(uvs[v].y, 1.0) * 256.0), 0, 255)
+		var at := (y * 256 + x) * 3
+		var top := maxi(pixels[at], maxi(pixels[at + 1], pixels[at + 2]))
+		var low := mini(pixels[at], mini(pixels[at + 1], pixels[at + 2]))
+		is_fur[v] = 1 if top > 140 and top - low < top * 0.25 else 0
+	# Keep a triangle if most of its corners are fur; renumber the vertices it uses.
+	var remap := PackedInt32Array()
+	remap.resize(uvs.size())
+	remap.fill(-1)
+	var kept := PackedInt32Array()
+	var used := PackedInt32Array()
+	for t in range(0, indices.size(), 3):
+		if is_fur[indices[t]] + is_fur[indices[t + 1]] + is_fur[indices[t + 2]] < 2:
+			continue
+		for k in 3:
+			var old := indices[t + k]
+			if remap[old] < 0:
+				remap[old] = used.size()
+				used.append(old)
+			kept.append(remap[old])
+	var result := []
+	result.resize(Mesh.ARRAY_MAX)
+	for slot in Mesh.ARRAY_MAX:
+		var data = arrays[slot]
+		if data == null or slot == Mesh.ARRAY_INDEX:
+			continue
+		var stride: int = data.size() / uvs.size()
+		var picked = data.duplicate()
+		picked.resize(used.size() * stride)
+		for i in used.size():
+			for c in stride:
+				picked[i * stride + c] = data[used[i] * stride + c]
+		result[slot] = picked
+	result[Mesh.ARRAY_INDEX] = kept
+	var flags := source.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, result, [], {}, flags)
+	return mesh
 
 
 ## Plays one of the model's clips ("Walking", "Running", "Attack", ...), or

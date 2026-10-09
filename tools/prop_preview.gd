@@ -64,6 +64,21 @@ func _ready() -> void:
 		"cabin":
 			node = WinterProps.log_cabin()
 			size = 5.0
+		"presents":
+			# The four title-screen presents side by side.
+			node = Node3D.new()
+			var specs := [
+				[Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES],
+				[Vector3(0.4, 0.32, 0.4), Color("1e6b3c"), Color("b3202c"), GiftBox.Pattern.TARTAN],
+				[Vector3(0.32, 0.55, 0.32), Color("5b2a6e"), Color("e8e2d4"), GiftBox.Pattern.DOTS],
+				[Vector3(0.7, 0.4, 0.55), Color("b3202c"), Color("f4efe6"), GiftBox.Pattern.STRIPES],
+			]
+			for i in specs.size():
+				var gift := WinterProps.present(specs[i][0], specs[i][1], specs[i][2], specs[i][3], i + 1)
+				gift.position = Vector3(-1.05 + i * 0.68, 0, 0)
+				gift.rotation.y = 0.35 - i * 0.2
+				node.add_child(gift)
+			size = 1.1
 		_:
 			node = PbrLibrary.model(prop)
 	add_child(node)
