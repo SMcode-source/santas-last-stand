@@ -4,14 +4,18 @@
 shader_type spatial;
 render_mode cull_disabled;
 
-uniform vec3 ribbon_color : source_color = vec3(0.8, 0.6, 0.15);
+// The ribbon's colour (sRGB) is in COLOR.rgb, and COLOR.a is 1 for metallic
+// gift ribbon, so every present shares this material.
 uniform float sheen = 0.25;
-// 1 for metallic gift ribbon.
-uniform float metallic = 0.0;
 // Ribs across the ribbon's width.
 uniform float ribs = 40.0;
 
+vec3 to_linear(vec3 c) {
+	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
+}
+
 void fragment() {
+	vec3 ribbon_color = to_linear(COLOR.rgb);
 	if (!FRONT_FACING) {
 		NORMAL = -NORMAL;
 	}
@@ -22,7 +26,7 @@ void fragment() {
 	float edge = 1.0 - smoothstep(0.0, 0.06, min(across, 1.0 - across));
 	ALBEDO = ribbon_color * (0.96 + rib * 0.04 * fade) * (1.0 - edge * 0.12);
 	ROUGHNESS = mix(sheen, 0.6, edge) + rib * 0.04 * fade;
-	METALLIC = metallic;
+	METALLIC = COLOR.a * 0.45;
 	SPECULAR = 0.65;
 	RIM = 0.25;
 	RIM_TINT = 0.6;

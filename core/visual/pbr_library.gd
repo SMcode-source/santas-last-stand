@@ -71,6 +71,18 @@ static func snowy(texture_set: String, tile_size := 1.0, tint := Color.WHITE, sn
 	return mat
 
 
+## Triplanar texture set for ToyBuilder parts, which carry their own tint (in
+## the vertex colour) and how much snow lies on them (in its alpha).
+static func vertex_tinted(texture_set: String, tile_size := 1.0) -> ShaderMaterial:
+	var key := "tinted|%s|%.3f" % [texture_set, tile_size]
+	if _cache.has(key):
+		return _cache[key]
+	var mat := snowy(texture_set, tile_size).duplicate() as ShaderMaterial
+	mat.set_shader_parameter("vertex_tint", true)
+	_cache[key] = mat
+	return mat
+
+
 ## Sparkling snowfield material for terrain.
 static func snow_ground() -> ShaderMaterial:
 	if not _cache.has("snow_ground"):

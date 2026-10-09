@@ -25,6 +25,12 @@ const DETAIL_ABOVE_LOW := "detail_above_low"
 ## Nodes in this group get apply_quality(level) whenever the level changes.
 const LISTENERS := "graphics_quality_listeners"
 
+## Glow blur passes in use per level (Godot's defaults are levels 3 and 5).
+const GLOW_LEVELS := {
+	Level.LOW: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+	Level.MEDIUM: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+	Level.HIGH: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0],
+}
 ## Average frame time (ms) above which we drop a level: about 45 fps.
 const SLOW_FRAME_MS := 22.0
 const SAMPLE_SECONDS := 2.0
@@ -79,6 +85,11 @@ func apply() -> void:
 	# Glow stays on at every level: without it the windows and fairy lights look
 	# painted on, and it is cheap next to shadows.
 	_environment.glow_enabled = true
+	# Low blurs the glow over fewer passes and skips the costlier texture work
+	# in the snow, rock and log shaders.
+	for i in 7:
+		_environment.set_glow_level(i, GLOW_LEVELS[level][i])
+	RenderingServer.global_shader_parameter_set("lite_shading", level == Level.LOW)
 	_sun.shadow_enabled = level != Level.LOW
 	for node in get_tree().get_nodes_in_group(LIGHTS_ABOVE_LOW):
 		(node as Light3D).visible = level != Level.LOW
@@ -90,9 +101,13 @@ func apply() -> void:
 			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for node in get_tree().get_nodes_in_group(SHADOWS_ON_HIGH):
 		(node as GeometryInstance3D).cast_shadow = casting
-	_sun.directional_shadow_max_distance = 32.0 if level == Level.HIGH else 22.0
+	# Medium covers just the camp with one shadow map instead of two.
+	_sun.directional_shadow_max_distance = 32.0 if level == Level.HIGH else 14.0
+	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if level == Level.HIGH 			else DirectionalLight3D.SHADOW_ORTHOGONAL
 	var viewport := get_viewport()
-	viewport.msaa_3d = Viewport.MSAA_2X
+	# FXAA smooths edges for a fraction of what MSAA costs on a laptop GPU.
+	viewport.msaa_3d = Viewport.MSAA_2X if level == Level.HIGH else Viewport.MSAA_DISABLED
+	viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED if level == Level.HIGH else Viewport.SCREEN_SPACE_AA_FXAA
 	_fit_resolution()
 	Engine.set_meta("graphics_quality", Level.keys()[level].capitalize())
 	Engine.set_meta("graphics_level", level)

@@ -23,6 +23,8 @@ uniform int trail_count = 0;
 // ground skips the footprint search entirely.
 uniform vec4 trail_bounds = vec4(0.0);
 uniform float stride = 0.36;
+// Set by GraphicsQuality at the Low level: no wind ripples or extra texture scales.
+global uniform bool lite_shading;
 
 varying vec3 world_pos;
 
@@ -78,22 +80,27 @@ void fragment() {
 	float dist = length(world_pos - (INV_VIEW_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz);
 	vec3 near = texture(snow_albedo, uv).rgb;
 	vec3 far = texture(snow_albedo, uv * 0.13 + 0.37).rgb;
-	vec3 farther = texture(snow_albedo, uv * 0.031 + 0.71).rgb;
 	// Far away, the coarse scales take over so the repeat never shows.
 	near = mix(near, far, smoothstep(12.0, 35.0, dist) * 0.6);
-	float variation = mix(far.r, farther.r, 0.5);
+	float variation = far.r;
+	if (!lite_shading) {
+		variation = mix(far.r, texture(snow_albedo, uv * 0.031 + 0.71).rgb.r, 0.5);
+	}
 	vec3 col = near * mix(0.9, 1.06, variation);
 	// Hollows (darker texture areas) pick up the blue of the sky.
 	col *= mix(hollow_tint, tint, smoothstep(0.55, 0.85, near.r));
 
 	// Wind ripples, in patches, bending around the drifts.
 	vec2 p = world_pos.xz;
-	float warp = texture(noise_tex, p * 0.07).r * 7.0;
-	float drift_mask = smoothstep(0.42, 0.62, texture(noise_tex, p * 0.025 + 0.3).r);
-	float phase = dot(p, normalize(wind_dir)) / ripple_spacing + warp;
-	float crest = pow(0.5 + 0.5 * sin(phase * 6.2832), 2.0);
-	float fade = 1.0 - smoothstep(0.25, 0.6, fwidth(phase));
-	float h = crest * ripple_height * drift_mask * fade;
+	float h = 0.0;
+	if (!lite_shading) {
+		float warp = texture(noise_tex, p * 0.07).r * 7.0;
+		float drift_mask = smoothstep(0.42, 0.62, texture(noise_tex, p * 0.025 + 0.3).r);
+		float phase = dot(p, normalize(wind_dir)) / ripple_spacing + warp;
+		float crest = pow(0.5 + 0.5 * sin(phase * 6.2832), 2.0);
+		float fade = 1.0 - smoothstep(0.25, 0.6, fwidth(phase));
+		h = crest * ripple_height * drift_mask * fade;
+	}
 
 	// Boot prints: pressed hollows, bluish in the shade, with a scuffed rim.
 	float print_depth = prints(p);
@@ -104,7 +111,7 @@ void fragment() {
 	ALBEDO = col;
 	NORMAL_MAP = texture(snow_normal, uv).rgb;
 	NORMAL_MAP_DEPTH = 1.2;
-	ROUGHNESS = texture(snow_roughness, uv).r * 0.9 + print_depth * 0.08;
+	ROUGHNESS = (lite_shading ? 0.75 : texture(snow_roughness, uv).r * 0.9) + print_depth * 0.08;
 
 	// Surface-gradient bump from the ripples and prints (no tangents needed).
 	vec3 dpdx = dFdx(VERTEX);

@@ -33,12 +33,30 @@ void vertex() {
 	obj_normal = NORMAL;
 }
 
+// Triplanar lookup that skips the projections a pixel barely uses (most
+// pixels face mostly one way, so this is usually one fetch instead of three).
+float tri_sample(sampler2D tex, vec3 p, vec3 w) {
+	vec3 dx = dFdx(p);
+	vec3 dy = dFdy(p);
+	float v = 0.0;
+	if (w.x > 0.01) {
+		v += textureGrad(tex, p.zy, dx.zy, dy.zy).r * w.x;
+	}
+	if (w.y > 0.01) {
+		v += textureGrad(tex, p.xz, dx.xz, dy.xz).r * w.y;
+	}
+	if (w.z > 0.01) {
+		v += textureGrad(tex, p.xy, dx.xy, dy.xy).r * w.z;
+	}
+	return v;
+}
+
 float tri_noise(vec3 p, vec3 w) {
-	return texture(noise_tex, p.zy).r * w.x + texture(noise_tex, p.xz).r * w.y + texture(noise_tex, p.xy).r * w.z;
+	return tri_sample(noise_tex, p, w);
 }
 
 float tri_cell(vec3 p, vec3 w) {
-	return texture(cell_tex, p.zy).r * w.x + texture(cell_tex, p.xz).r * w.y + texture(cell_tex, p.xy).r * w.z;
+	return tri_sample(cell_tex, p, w);
 }
 
 void fragment() {

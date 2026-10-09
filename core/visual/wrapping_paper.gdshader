@@ -3,25 +3,18 @@
 // being folded round it. Prints can be metallic foil.
 shader_type spatial;
 
-uniform vec3 paper_color : source_color = vec3(0.8, 0.1, 0.1);
-uniform vec3 print_color : source_color = vec3(1.0);
+// Each present's look rides in its vertices (see GiftBox._print), so all of
+// them share this one material: COLOR.rgb is the paper colour (sRGB), and
+// COLOR.a holds the pattern (0 stripes, 1 polka dots, 2 snowflakes, 3 tartan,
+// 4 plain for gift tags) plus 5 for light papers, over 10. UV is the print's
+// position on the face, in metres.
+uniform vec3 print_on_light : source_color = vec3(0.7, 0.125, 0.17);
+uniform vec3 print_on_dark : source_color = vec3(0.96, 0.93, 0.86);
 uniform vec3 accent_color : source_color = vec3(0.85, 0.65, 0.2);
-// 0 stripes, 1 polka dots, 2 snowflakes, 3 tartan, 4 plain (gift tags)
-uniform int pattern = 0;
-// Pattern repeats per metre.
-uniform float pattern_scale = 14.0;
-// 1 makes the print shiny metal foil.
-uniform float foil = 0.0;
-uniform float roughness = 0.42;
-uniform float crinkle = 0.0006;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 
-varying vec3 obj_pos;
-varying vec3 obj_normal;
-
-void vertex() {
-	obj_pos = VERTEX;
-	obj_normal = NORMAL;
+vec3 to_linear(vec3 c) {
+	return mix(pow((c + 0.055) / 1.055, vec3(2.4)), c / 12.92, lessThan(c, vec3(0.04045)));
 }
 
 // Anti-aliased step: 1 inside (value < edge), 0 outside.
@@ -42,15 +35,17 @@ float snowflake(vec2 q) {
 }
 
 void fragment() {
-	vec3 n = abs(obj_normal);
-	vec2 p;
-	if (n.y >= n.x && n.y >= n.z) {
-		p = obj_pos.xz;
-	} else if (n.x >= n.z) {
-		p = obj_pos.zy;
-	} else {
-		p = obj_pos.xy;
-	}
+	int code = int(COLOR.a * 10.0);
+	int pattern = code % 5;
+	vec3 paper_color = to_linear(COLOR.rgb);
+	vec3 print_color = code >= 5 ? print_on_light : print_on_dark;
+	// Pattern repeats per metre; tartan is drawn larger.
+	float pattern_scale = pattern == 3 ? 7.0 : 14.0;
+	// Snowflake prints are shiny metal foil; plain tags are matte card.
+	float foil = pattern == 2 ? 1.0 : 0.0;
+	float roughness = pattern == 4 ? 0.75 : 0.42;
+	float crinkle = pattern == 4 ? 0.0002 : 0.0006;
+	vec2 p = UV;
 	vec2 q = p * pattern_scale;
 	float print_mask = 0.0;
 	float accent_mask = 0.0;

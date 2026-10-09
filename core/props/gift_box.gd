@@ -3,6 +3,9 @@ extends RefCounted
 ## A wrapped present that looks like it could be opened: a box with a separate,
 ## slightly wider lid, printed glossy paper, a satin ribbon tied round both, a
 ## bow of pinched loops with notched tails, and sometimes a gift tag on a string.
+## Every present shares the same two materials (paper and ribbon): colours and
+## pattern ride in the vertex colours, so presents that never move can be
+## merged into one mesh with merge() and drawn in two draw calls.
 
 const PAPER := preload("res://core/visual/wrapping_paper.gdshader")
 const RIBBON := preload("res://core/visual/satin_ribbon.gdshader")
@@ -16,7 +19,8 @@ const KRAFT := Color("c9a57a")
 const LID_OVERHANG := 0.008
 const RIBBON_THICKNESS := 0.0015
 
-static var _materials := {}
+static var _paper_material: ShaderMaterial
+static var _ribbon_material: ShaderMaterial
 
 
 ## `pattern` -1 picks one from the paper colour.
@@ -50,10 +54,15 @@ static func build(size: Vector3, paper: Color, ribbon: Color, pattern := -1, see
 	if rng.randf() < 0.6:
 		_tag(tag_surface, ribbon_surface, size, width, rng)
 
+	_print(paper_surface, paper, pattern)
+	_print(tag_surface, KRAFT, Pattern.PLAIN)
+	_append(paper_surface, tag_surface)
+	# Gold ribbon is metallic gift ribbon; other colours are satin.
+	var gold := ribbon.h > 0.08 and ribbon.h < 0.17 and ribbon.s > 0.4
+	ribbon_surface.colors.fill(Color(ribbon.r, ribbon.g, ribbon.b, 1.0 if gold else 0.0))
 	var mesh := ArrayMesh.new()
-	paper_surface.add_to(mesh, paper_material(paper, pattern))
-	ribbon_surface.add_to(mesh, ribbon_material(ribbon))
-	tag_surface.add_to(mesh, paper_material(KRAFT, Pattern.PLAIN))
+	paper_surface.add_to(mesh, paper_material())
+	ribbon_surface.add_to(mesh, ribbon_material())
 	var instance := MeshInstance3D.new()
 	instance.name = "Mesh"
 	instance.mesh = mesh
@@ -63,38 +72,78 @@ static func build(size: Vector3, paper: Color, ribbon: Color, pattern := -1, see
 	return root
 
 
-static func paper_material(color: Color, pattern: int) -> ShaderMaterial:
-	var key := "paper|%s|%d" % [color.to_html(), pattern]
-	if not _materials.has(key):
-		var mat := ShaderMaterial.new()
-		mat.shader = PAPER
-		mat.set_shader_parameter("paper_color", color)
-		mat.set_shader_parameter("pattern", pattern)
-		mat.set_shader_parameter("noise_tex", CharacterFinish.noise())
-		# Light papers get a red print; the rest cream, with a gold foil accent.
-		var light := color.get_luminance() > 0.6
-		mat.set_shader_parameter("print_color", Color("b3202c") if light else PRINT)
-		mat.set_shader_parameter("accent_color", FOIL)
-		mat.set_shader_parameter("foil", 1.0 if pattern == Pattern.SNOWFLAKES else 0.0)
-		mat.set_shader_parameter("pattern_scale", 7.0 if pattern == Pattern.TARTAN else 14.0)
-		if pattern == Pattern.PLAIN:
-			mat.set_shader_parameter("roughness", 0.75)
-			mat.set_shader_parameter("crinkle", 0.0002)
-		_materials[key] = mat
-	return _materials[key]
+## Merges presents that will never move into one mesh (two draw calls in all).
+## Each present keeps the place it was given; the originals are freed.
+static func merge(presents: Array[Node3D]) -> MeshInstance3D:
+	var merged := [MeshPieces.new(), MeshPieces.new()]
+	for present in presents:
+		var part := present.get_node("Mesh") as MeshInstance3D
+		var xform := present.transform * part.transform
+		var normal_basis := xform.basis.inverse().transposed()
+		for s in 2:
+			var arrays := part.mesh.surface_get_arrays(s)
+			var pieces := MeshPieces.new()
+			pieces.verts = xform * (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+			pieces.normals = Transform3D(normal_basis, Vector3.ZERO) * (arrays[Mesh.ARRAY_NORMAL] as PackedVector3Array)
+			pieces.uvs = arrays[Mesh.ARRAY_TEX_UV]
+			pieces.colors = arrays[Mesh.ARRAY_COLOR]
+			pieces.indices = arrays[Mesh.ARRAY_INDEX]
+			_append(merged[s], pieces)
+		present.free()
+	var mesh := ArrayMesh.new()
+	(merged[0] as MeshPieces).add_to(mesh, paper_material())
+	(merged[1] as MeshPieces).add_to(mesh, ribbon_material())
+	var instance := MeshInstance3D.new()
+	instance.name = "Presents"
+	instance.mesh = mesh
+	return instance
 
 
-static func ribbon_material(color: Color) -> ShaderMaterial:
-	var key := "ribbon|" + color.to_html()
-	if not _materials.has(key):
-		var mat := ShaderMaterial.new()
-		mat.shader = RIBBON
-		mat.set_shader_parameter("ribbon_color", color)
-		# Gold ribbon is metallic gift ribbon; other colours are satin.
-		var gold := color.h > 0.08 and color.h < 0.17 and color.s > 0.4
-		mat.set_shader_parameter("metallic", 0.45 if gold else 0.0)
-		_materials[key] = mat
-	return _materials[key]
+static func paper_material() -> ShaderMaterial:
+	if _paper_material == null:
+		_paper_material = ShaderMaterial.new()
+		_paper_material.shader = PAPER
+		_paper_material.set_shader_parameter("noise_tex", CharacterFinish.noise())
+		_paper_material.set_shader_parameter("accent_color", FOIL)
+		_paper_material.set_shader_parameter("print_on_dark", PRINT)
+	return _paper_material
+
+
+static func ribbon_material() -> ShaderMaterial:
+	if _ribbon_material == null:
+		_ribbon_material = ShaderMaterial.new()
+		_ribbon_material.shader = RIBBON
+	return _ribbon_material
+
+
+## Stores the paper's look in its vertices for the wrapping paper shader: the
+## colour (sRGB) in rgb, and in alpha the pattern plus whether the paper is
+## light (light papers get a red print, the rest cream). UVs become the print's
+## coordinates, projected onto each face from the side it faces.
+static func _print(s: MeshPieces, color: Color, pattern: int) -> void:
+	var code := pattern + (5 if color.get_luminance() > 0.6 else 0)
+	s.colors.fill(Color(color.r, color.g, color.b, (code + 0.5) / 10.0))
+	for i in s.verts.size():
+		var n := s.normals[i].abs()
+		var p := s.verts[i]
+		if n.y >= n.x and n.y >= n.z:
+			s.uvs[i] = Vector2(p.x, p.z)
+		elif n.x >= n.z:
+			s.uvs[i] = Vector2(p.z, p.y)
+		else:
+			s.uvs[i] = Vector2(p.x, p.y)
+
+
+static func _append(to: MeshPieces, from: MeshPieces) -> void:
+	var base := to.verts.size()
+	to.verts.append_array(from.verts)
+	to.normals.append_array(from.normals)
+	to.uvs.append_array(from.uvs)
+	to.colors.append_array(from.colors)
+	var start := to.indices.size()
+	to.indices.append_array(from.indices)
+	for i in range(start, to.indices.size()):
+		to.indices[i] += base
 
 
 # --- Shapes ------------------------------------------------------------------

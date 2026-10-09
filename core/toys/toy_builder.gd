@@ -20,8 +20,12 @@ static var _unit_sphere: SphereMesh
 static var _shape_cache := {}
 static var _strand_patterns := {}
 
-## Bucket key -> _Bucket. Keys: "painted", "glow", or "tex|<set>|<tile>|<tint>|<snow>".
+## Bucket key -> _Bucket. Keys: "painted", "glow", "fin|<finish>" or "tex|<set>|<tile>".
+## Textured parts keep their tint and snow in the vertex colour, so every part
+## using one texture set shares a single surface (one draw call).
 var _buckets := {}
+## Bucket key prefixes whose surfaces cast no shadow (see shadowless()).
+var _shadowless: Array[String] = ["glow"]
 
 
 class _Bucket:
@@ -60,8 +64,8 @@ func add(mesh: Mesh, color: Color, xform := Transform3D.IDENTITY, glow := false)
 ## `snow` above 0 lets snow settle on the upward-facing parts.
 func textured(mesh: Mesh, texture_set: String, xform := Transform3D.IDENTITY,
 		tile_size := 1.0, tint := Color.WHITE, snow := 0.0) -> ToyBuilder:
-	var key := "tex|%s|%s|%s|%s" % [texture_set, tile_size, tint.to_html(), snow]
-	return _append(_bucket(key), mesh, Color.WHITE, xform)
+	var key := "tex|%s|%s" % [texture_set, tile_size]
+	return _append(_bucket(key), mesh, Color(tint.r, tint.g, tint.b, snow), xform)
 
 
 ## Adds `mesh` in a colour with a character finish: "velvet", "fur", "hair",
@@ -252,19 +256,41 @@ func fluff_path(points: PackedVector3Array, puff: float, color: Color, spacing :
 
 ## Produces a MeshInstance3D holding everything added so far.
 ## `outline` only applies when cartoon_shading is on.
+## Parts whose bucket key starts with `prefix` ("fin|", "fin|eye", "painted"...)
+## cast no shadow. Small trinkets like baubles and beads add a lot of
+## triangles to the shadow pass for shadows nobody would notice; glowing parts
+## never cast one.
+func shadowless(prefix: String) -> ToyBuilder:
+	_shadowless.append(prefix)
+	return self
+
+
+## Builds the mesh: one surface (draw call) per bucket. Shadowless surfaces go
+## in a child MeshInstance3D named "NoShadow".
 func build(outline := 0.012, node_name := "Toy") -> MeshInstance3D:
 	var mesh := ArrayMesh.new()
-	var surface := 0
+	var unshadowed := ArrayMesh.new()
 	for key: String in _buckets:
 		var bucket: _Bucket = _buckets[key]
 		if bucket.is_empty():
 			continue
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, bucket.to_arrays())
-		mesh.surface_set_material(surface, _material_for(key, outline))
-		surface += 1
+		var target := unshadowed if _shadowless.any(func(p: String) -> bool: return key.begins_with(p)) else mesh
+		target.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, bucket.to_arrays())
+		target.surface_set_material(target.get_surface_count() - 1, _material_for(key, outline))
 	var instance := MeshInstance3D.new()
 	instance.name = node_name
+	if mesh.get_surface_count() == 0:
+		# Nothing casts a shadow: the whole thing is one shadowless mesh.
+		instance.mesh = unshadowed
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		return instance
 	instance.mesh = mesh
+	if unshadowed.get_surface_count() > 0:
+		var child := MeshInstance3D.new()
+		child.name = "NoShadow"
+		child.mesh = unshadowed
+		child.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		instance.add_child(child)
 	return instance
 
 
@@ -278,10 +304,7 @@ static func _material_for(key: String, outline: float) -> Material:
 	if key == "painted":
 		return toon_material(outline) if cartoon_shading else PbrLibrary.painted()
 	var parts := key.split("|")
-	var snow := float(parts[4])
-	if snow > 0.0:
-		return PbrLibrary.snowy(parts[1], float(parts[2]), Color.html(parts[3]), snow)
-	return PbrLibrary.material(parts[1], float(parts[2]), Color.html(parts[3]))
+	return PbrLibrary.vertex_tinted(parts[1], float(parts[2]))
 
 
 static func toon_material(outline := 0.012) -> ShaderMaterial:

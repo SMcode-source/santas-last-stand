@@ -20,6 +20,7 @@ const BAUBLES := [Color("d4202f"), Color("e5b638"), Color("2e86de"), Color("c0c7
 const FAIRY := [Color("ff5a5a"), Color("ffd84a"), Color("5ad1ff"), Color("7dff8a"), Color("ff8ae2")]
 
 const FOLIAGE_SHADER := preload("res://core/visual/foliage.gdshader")
+const SNOWFALL_SHADER := preload("res://core/visual/snowfall.gdshader")
 const BRANCH_TEX := preload("res://assets/textures/generated/fir_branch.png")
 
 ## Render layer for meshes that their own built-in light should skip (each
@@ -122,12 +123,16 @@ static func fir_tree(height: float, seed := 1, decorated := false, detail := 1.0
 		light.add_to_group(GraphicsQuality.LIGHTS_ABOVE_LOW)
 		root.add_child(light)
 
+	# Baubles, beads and fairy lights cast no shadow worth their triangles.
+	b.shadowless("fin|")
 	var mesh_instance := b.build(0.0, "Mesh")
 	var mesh: ArrayMesh = mesh_instance.mesh
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, foliage.arrays())
 	mesh.surface_set_material(mesh.get_surface_count() - 1, foliage_material(snow * (0.6 if decorated else 1.0)))
 	if decorated:
 		mesh_instance.layers = SELF_LIT_LAYER
+		for child in mesh_instance.get_children():
+			(child as MeshInstance3D).layers = SELF_LIT_LAYER
 	root.add_child(mesh_instance)
 	return root
 
@@ -582,6 +587,47 @@ static func _chimney_smoke(at: Vector3) -> CPUParticles3D:
 
 
 ## A soft round blob texture for smoke and other particles.
+## Gently falling snow filling a box (`origin` is its low corner): `amount`
+## flakes, all animated by the snowfall shader, drawn in one go.
+static func snowfall(amount: int, origin: Vector3, size: Vector3) -> MeshInstance3D:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var verts := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var colors := PackedColorArray()
+	var indices := PackedInt32Array()
+	var corners := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
+	for i in amount:
+		var seed := Color(rng.randf(), rng.randf(), rng.randf(), rng.randf())
+		var base := verts.size()
+		for c: Vector2 in corners:
+			verts.append(Vector3.ZERO)
+			uvs.append(c)
+			colors.append(seed)
+		indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_COLOR] = colors
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	# The flakes are placed by the shader, so tell the engine where they can be.
+	mesh.custom_aabb = AABB(origin - Vector3.ONE, size + Vector3.ONE * 2.0)
+	var mat := ShaderMaterial.new()
+	mat.shader = SNOWFALL_SHADER
+	mat.set_shader_parameter("dot_tex", soft_dot())
+	mat.set_shader_parameter("box_min", origin)
+	mat.set_shader_parameter("box_size", size)
+	mesh.surface_set_material(0, mat)
+	var instance := MeshInstance3D.new()
+	instance.name = "Snowfall"
+	instance.mesh = mesh
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return instance
+
+
 static func soft_dot() -> GradientTexture2D:
 	if not _cache.has("soft_dot"):
 		var gradient := Gradient.new()
@@ -844,6 +890,8 @@ static func snow_ground(size := 120.0, resolution := 80, flat_radius := 7.0, see
 			var tile := MeshInstance3D.new()
 			tile.name = "Tile%d_%d" % [tx, tz]
 			tile.mesh = grid
+			# The ground only receives shadows; it has nothing to cast them on.
+			tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			root.add_child(tile)
 	return root
 
@@ -878,11 +926,10 @@ static func toy_sack(seed := 1) -> Node3D:
 	var peek := present(Vector3(0.2, 0.18, 0.2), Color("1e6b3c"), GOLD, GiftBox.Pattern.DOTS, seed + 3)
 	peek.position = Vector3(-0.05, 0.7, 0.02)
 	peek.rotation_degrees = Vector3(14, 25, -10)
-	sack.add_child(peek)
 	var peek2 := present(Vector3(0.16, 0.22, 0.16), Color("2e86de"), Color("f4efe6"), GiftBox.Pattern.STRIPES, seed + 4)
 	peek2.position = Vector3(0.07, 0.68, -0.05)
 	peek2.rotation_degrees = Vector3(-12, -30, 16)
-	sack.add_child(peek2)
+	sack.add_child(GiftBox.merge([peek, peek2] as Array[Node3D]))
 	return root
 
 

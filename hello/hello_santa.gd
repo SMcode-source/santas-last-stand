@@ -4,6 +4,7 @@ extends Node3D
 ## Advent calendar and Prologue use it as a backdrop with `show_ui` off.
 
 const SKY_SHADER := preload("res://core/visual/night_sky.gdshader")
+const SKY_DOME_SHADER := preload("res://core/visual/night_sky_dome.gdshader")
 
 ## The title text, the hint line and click-to-wave.
 var show_ui := true
@@ -28,6 +29,8 @@ func _ready() -> void:
 	if show_ui:
 		_build_ui()
 	Engine.set_meta("startup_ms", Time.get_ticks_msec() - start)
+	# Shows up in the browser console, to keep an eye on loading in the web build.
+	print("Title scene built in %d ms" % Engine.get_meta("startup_ms"))
 
 
 func _build_environment() -> void:
@@ -35,6 +38,9 @@ func _build_environment() -> void:
 	sky_mat.shader = SKY_SHADER
 	var sky := Sky.new()
 	sky.sky_material = sky_mat
+	# The sky only lends reflections; it is still, so they are worked out once.
+	sky.radiance_size = Sky.RADIANCE_SIZE_64
+	sky.process_mode = Sky.PROCESS_MODE_QUALITY
 
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
@@ -58,6 +64,20 @@ func _build_environment() -> void:
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
+	# What the camera sees of the sky: twinkling stars and a drifting aurora.
+	var dome_mesh := SphereMesh.new()
+	dome_mesh.radius = 800.0
+	dome_mesh.height = 1600.0
+	dome_mesh.radial_segments = 32
+	dome_mesh.rings = 16
+	var dome_mat := ShaderMaterial.new()
+	dome_mat.shader = SKY_DOME_SHADER
+	dome_mesh.material = dome_mat
+	var dome := MeshInstance3D.new()
+	dome.name = "SkyDome"
+	dome.mesh = dome_mesh
+	dome.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(dome)
 
 	# Cool moonlight from front-left, so faces read clearly.
 	var moon := DirectionalLight3D.new()
@@ -82,7 +102,7 @@ func _build_scene() -> void:
 	# Boot prints from the cabin door, round the woodpile, to where Santa stands.
 	var trail := PackedVector2Array([Vector2(-3.45, -3.5), Vector2(-2.5, -3.45), Vector2(-1.5, -3.0),
 			Vector2(-0.8, -2.0), Vector2(-0.4, -1.0), Vector2(-0.12, -0.3)])
-	add_child(WinterProps.snow_ground(120.0, 80, 7.0, 1, 4, trail))
+	add_child(WinterProps.snow_ground(120.0, 80, 7.0, 1, 1, trail))
 
 	santa = SantaModel.new()
 	add_child(santa)
@@ -93,10 +113,17 @@ func _build_scene() -> void:
 	_place(WinterProps.lamp_post(), Vector3(-2.4, 0, 0.6))
 	_place(WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
 	_place(WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
-	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, 1), Vector3(-1.15, 0, 0.0), 18)
-	_place(WinterProps.present(Vector3(0.4, 0.32, 0.4), Color("1e6b3c"), Color("b3202c"), GiftBox.Pattern.TARTAN, 2), Vector3(1.05, 0, 0.3), -22)
-	_place(WinterProps.present(Vector3(0.32, 0.55, 0.32), Color("5b2a6e"), Color("e8e2d4"), GiftBox.Pattern.DOTS, 3), Vector3(1.4, 0, -0.35), 40)
-	_place(WinterProps.present(Vector3(0.7, 0.4, 0.55), Color("b3202c"), Color("f4efe6"), GiftBox.Pattern.STRIPES, 4), Vector3(3.0, 0, -2.2), 10)
+	# Presents that never move, merged so they draw in one go.
+	var gifts: Array[Node3D] = []
+	for spec: Array in [[Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, Vector3(-1.15, 0, 0.0), 18],
+			[Vector3(0.4, 0.32, 0.4), Color("1e6b3c"), Color("b3202c"), GiftBox.Pattern.TARTAN, Vector3(1.05, 0, 0.3), -22],
+			[Vector3(0.32, 0.55, 0.32), Color("5b2a6e"), Color("e8e2d4"), GiftBox.Pattern.DOTS, Vector3(1.4, 0, -0.35), 40],
+			[Vector3(0.7, 0.4, 0.55), Color("b3202c"), Color("f4efe6"), GiftBox.Pattern.STRIPES, Vector3(3.0, 0, -2.2), 10]]:
+		var gift := WinterProps.present(spec[0], spec[1], spec[2], spec[3], gifts.size() + 1)
+		gift.position = spec[4]
+		gift.rotation_degrees.y = spec[5]
+		gifts.append(gift)
+	add_child(GiftBox.merge(gifts))
 
 	# Campfire with a bench, a woodcutter's corner, and the cabin's yard clutter
 	_place(WinterProps.campfire(), Vector3(1.9, 0, -2.3))
@@ -170,31 +197,8 @@ func _build_scene() -> void:
 	add_child(_ground_details(placements, VARIANT_HEIGHT, rng))
 	add_child(WinterProps.mountain_range())
 
-	# Falling snow
-	var snow := CPUParticles3D.new()
-	snow.amount = 400
-	snow.lifetime = 7.0
-	snow.preprocess = 7.0
-	snow.position = Vector3(0, 8, -4.5)
-	snow.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
-	snow.emission_box_extents = Vector3(14, 0.5, 8)
-	snow.direction = Vector3(0.1, -1, 0)
-	snow.spread = 15
-	snow.initial_velocity_min = 0.8
-	snow.initial_velocity_max = 1.3
-	snow.gravity = Vector3(0, -0.2, 0)
-	snow.scale_amount_min = 0.6
-	snow.scale_amount_max = 1.4
-	var flake := QuadMesh.new()
-	flake.size = Vector2.ONE * 0.07
-	var flake_mat := StandardMaterial3D.new()
-	flake_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	flake_mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	flake_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	flake_mat.albedo_texture = WinterProps.soft_dot()
-	flake_mat.albedo_color = Color(0.95, 0.97, 1.0, 0.9)
-	flake.material = flake_mat
-	snow.mesh = flake
+	# Falling snow (moved by the graphics card, so it costs no CPU time)
+	var snow := WinterProps.snowfall(400, Vector3(-14, 0, -12.5), Vector3(28, 8.5, 16))
 	add_child(snow)
 
 

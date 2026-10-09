@@ -21,6 +21,10 @@ uniform bool use_triplanar = false;
 // Distant surfaces (mountains) skip the normal, roughness and AO maps.
 uniform bool detail_maps = true;
 uniform float triplanar_tile = 1.0;
+// Built meshes carry their tint in the vertex colour and their snow in its alpha.
+uniform bool vertex_tint = false;
+// Set by GraphicsQuality at the Low level: skip the normal, roughness and AO maps.
+global uniform bool lite_shading;
 
 // 0 = bare, 0.5 = snow on tops, 1 = nearly buried.
 uniform float snow_amount : hint_range(0.0, 1.0) = 0.5;
@@ -46,12 +50,26 @@ void vertex() {
 	}
 }
 
+// Triplanar lookups skip the projections a pixel barely uses: most pixels
+// face mostly one way, so this is usually one fetch instead of three.
 vec4 sample_surface(sampler2D tex, vec2 uv, vec3 weights) {
 	if (!use_triplanar) {
 		return texture(tex, uv);
 	}
 	vec3 p = world_pos / triplanar_tile;
-	return texture(tex, p.zy) * weights.x + texture(tex, p.xz) * weights.y + texture(tex, p.xy) * weights.z;
+	vec3 dx = dFdx(p);
+	vec3 dy = dFdy(p);
+	vec4 v = vec4(0.0);
+	if (weights.x > 0.01) {
+		v += textureGrad(tex, p.zy, dx.zy, dy.zy) * weights.x;
+	}
+	if (weights.y > 0.01) {
+		v += textureGrad(tex, p.xz, dx.xz, dy.xz) * weights.y;
+	}
+	if (weights.z > 0.01) {
+		v += textureGrad(tex, p.xy, dx.xy, dy.xy) * weights.z;
+	}
+	return v;
 }
 
 void fragment() {
@@ -60,11 +78,16 @@ void fragment() {
 	weights /= dot(weights, vec3(1.0));
 
 	vec3 base = sample_surface(albedo_tex, uv, weights).rgb * albedo_color.rgb;
+	float snow_level = snow_amount;
+	if (vertex_tint) {
+		base *= COLOR.rgb;
+		snow_level = COLOR.a;
+	}
 	vec3 base_normal = vec3(0.5, 0.5, 1.0);
 	float base_rough = roughness;
 	float base_metal = metallic;
 	float ao = 1.0;
-	if (detail_maps) {
+	if (detail_maps && !lite_shading) {
 		base_normal = sample_surface(normal_tex, uv, weights).rgb;
 		base_rough *= dot(sample_surface(roughness_tex, uv, weights), roughness_channel);
 		base_metal *= dot(sample_surface(metallic_tex, uv, weights), metallic_channel);
@@ -77,8 +100,8 @@ void fragment() {
 	float breakup = texture(snow_albedo, snow_uv * 0.23).r - 0.5;
 	float up = world_normal.y + breakup * 0.5;
 	up += smoothstep(snow_height_start, snow_height_end, world_pos.y) * 0.8;
-	float threshold = 1.0 - snow_amount * 1.3;
-	float mask = smoothstep(threshold, threshold + 0.18, up) * step(0.001, snow_amount);
+	float threshold = 1.0 - snow_level * 1.3;
+	float mask = smoothstep(threshold, threshold + 0.18, up) * step(0.001, snow_level);
 
 	ALBEDO = mix(base, snow, mask);
 	NORMAL_MAP = mix(base_normal, texture(snow_normal, snow_uv).rgb, mask);
