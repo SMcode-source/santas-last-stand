@@ -9,6 +9,13 @@ const SKY_SHADER := preload("res://core/visual/night_sky.gdshader")
 var show_ui := true
 ## The slow camera orbit around Santa. Turn off to move the camera yourself.
 var orbit_camera := true
+## Santa going about his chores (chopping wood, packing his sack). Turn off
+## to keep him standing still in the middle.
+var santa_routine := true
+var routine: Node
+## Where the routine starts: "" (greeting), "chop" or "pack".
+var routine_start := ""
+var _look := Vector3(0.3, 1.2, 0)
 var santa: SantaModel
 var camera: Camera3D
 var _time := 0.0
@@ -66,7 +73,7 @@ func _build_environment() -> void:
 	add_child(GraphicsQuality.new(env, moon))
 
 	camera = Camera3D.new()
-	camera.fov = 45
+	camera.fov = 52
 	add_child(camera)
 	_update_camera()
 
@@ -82,8 +89,8 @@ func _build_scene() -> void:
 
 	_place(WinterProps.log_cabin(), Vector3(-4.2, 0, -5.5), 22)
 	_place(WinterProps.fir_tree(4.2, 7, true, 0.85), Vector3(3.6, 0, -3.8))
-	_place(WinterProps.snowman(), Vector3(3.3, 0, 0.2), -40)
-	_place(WinterProps.lamp_post(), Vector3(-2.3, 0, 1.2))
+	_place(WinterProps.snowman(), Vector3(3.1, 0, -0.4), -35)
+	_place(WinterProps.lamp_post(), Vector3(-2.4, 0, 0.6))
 	_place(WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
 	_place(WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
 	_place(WinterProps.present(Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, 1), Vector3(-1.15, 0, 0.0), 18)
@@ -96,7 +103,32 @@ func _build_scene() -> void:
 	_place(PbrLibrary.model("painted_wooden_bench", 0.5), Vector3(2.0, 0, -3.5), 10)
 	var stump := PbrLibrary.model("tree_stump_01", 0.45)
 	_place(stump, Vector3(-2.6, 0, -2.4), 40)
-	stump.add_child(_axe_in_stump(stump.rotation.y))
+	var axe := _axe_in_stump(stump.rotation.y)
+	stump.add_child(axe)
+	# A log stood on the stump ready to split, and Santa's sack with a little
+	# pile of presents waiting to go in.
+	var log_parts := WinterProps.log_round()
+	for part in log_parts:
+		_place(part, Vector3(-2.6, 0.33, -2.4), 15)
+	var sack := WinterProps.toy_sack()
+	_place(sack, Vector3(2.35, 0, -1.05), -60)
+	var pile: Array[Node3D] = []
+	for spec: Array in [[Vector3(0.3, 0.24, 0.3), Color("b3202c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, Vector3(1.0, 0, -1.55), 20],
+			[Vector3(0.26, 0.2, 0.26), Color("e8e2d4"), Color("b3202c"), GiftBox.Pattern.STRIPES, Vector3(1.2, 0, -1.85), -15],
+			[Vector3(0.2, 0.18, 0.2), Color("1d4f8c"), Color("e8e2d4"), GiftBox.Pattern.DOTS, Vector3(0.98, 0.24, -1.55), 40]]:
+		var gift := WinterProps.present(spec[0], spec[1], spec[2], spec[3], pile.size() + 7)
+		_place(gift, spec[4], spec[5])
+		pile.append(gift)
+	if santa_routine:
+		routine = preload("res://hello/title_routine.gd").new()
+		routine.santa = santa
+		routine.axe = axe
+		routine.log_whole = log_parts[0]
+		routine.log_halves.assign(log_parts.slice(1))
+		routine.sack = sack
+		routine.pile = pile
+		routine.start_at = routine_start
+		add_child(routine)
 	_place(PbrLibrary.model("dry_branches_medium_01", 0.4), Vector3(-3.4, 0, -1.6), 120)
 	_place(PbrLibrary.model("wooden_crate_01", 0.5), Vector3(-1.6, 0, -4.3), -15)
 	_place(PbrLibrary.model("wine_barrel_01", 0.5), Vector3(-1.1, 0, -5.0), 0)
@@ -167,18 +199,19 @@ func _build_scene() -> void:
 
 
 ## The woodcutter's axe, its blade bitten into the top of the stump and the
-## handle rising out of it towards the camera's right. In the model the handle
+## handle rising out of it towards where Santa stands to chop. In the model the handle
 ## runs along +y with the head at the top and the cutting edge facing +z.
 func _axe_in_stump(stump_yaw: float) -> Node3D:
 	var axe := PbrLibrary.model("wooden_axe", 0.2)
-	var out := Vector3(1, 0, 0.35).normalized().rotated(Vector3.UP, -stump_yaw)
+	var out := Vector3(0.25, 0, -1).normalized().rotated(Vector3.UP, -stump_yaw)
 	var lift := deg_to_rad(35.0)
 	var head_dir := -(out * cos(lift) + Vector3.UP * sin(lift))
 	var edge_dir := (Vector3.DOWN - head_dir * Vector3.DOWN.dot(head_dir)).normalized()
 	var basis := Basis(head_dir.cross(edge_dir), head_dir, edge_dir)
-	# The middle of the cutting edge, sunk a few centimetres into the stump top.
+	# The middle of the cutting edge, sunk a few centimetres into the stump top
+	# near its edge, leaving room for a log in the middle.
 	var edge := Vector3(0, 0.37, 0.17)
-	axe.transform = Transform3D(basis, Vector3(-0.03, 0.29, 0.02) - basis * edge)
+	axe.transform = Transform3D(basis, Vector3(-0.03, 0.27, 0.02) + out * 0.22 - basis * edge)
 	return axe
 
 
@@ -310,14 +343,18 @@ func _build_ui() -> void:
 func _process(delta: float) -> void:
 	_time += delta
 	if orbit_camera:
+		# Follow Santa round the camp, gently.
+		var target := Vector3(santa.position.x * 0.65 + 0.2, 1.15, santa.position.z * 0.45)
+		_look = _look.lerp(target, 1.0 - exp(-delta * 1.2))
 		_update_camera()
 
 
 func _update_camera() -> void:
-	# Slow, gentle orbit around Santa.
-	var angle := sin(_time * 0.15) * 0.35
-	camera.position = Vector3(sin(angle) * 3.7, 1.55, cos(angle) * 3.7)
-	camera.look_at(Vector3(0, 1.12, 0))
+	# Slow, gentle orbit around Santa, pulled back far enough that the lamp
+	# post on the left and the snowman on the right stay in frame.
+	var angle := sin(_time * 0.15) * 0.12
+	camera.position = Vector3(sin(angle) * 4.9, 1.7, cos(angle) * 4.9)
+	camera.look_at(_look)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -326,5 +363,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	var pressed_key: bool = event is InputEventKey and event.pressed and not event.echo
 	var clicked: bool = event is InputEventMouseButton and event.pressed
 	if pressed_key or clicked:
-		santa.hop()
-		santa.wave()
+		if routine:
+			routine.request_wave()
+		else:
+			santa.hop()
+			santa.wave()

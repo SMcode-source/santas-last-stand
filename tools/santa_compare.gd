@@ -3,6 +3,7 @@ extends Node
 ## realistic SantaModel, for comparing looks with --write-movie.
 ##   -- --wave   makes the model wave
 ##   -- --clip=Walking   plays one of its animation clips
+##   -- --gesture=rub_hands   starts one of the idle gestures
 ##   -- --close  frames the model alone, close up
 ##   -- --tight  frames his chest, beard and sleeve, for checking fabric detail
 
@@ -14,6 +15,7 @@ func _ready() -> void:
 	var backdrop: Node3D = BACKDROP.instantiate()
 	backdrop.show_ui = false
 	backdrop.orbit_camera = false
+	backdrop.santa_routine = false
 	add_child(backdrop)
 	await get_tree().process_frame
 	var santa: SantaModel = backdrop.santa
@@ -34,6 +36,8 @@ func _ready() -> void:
 	for arg in args:
 		if arg.begins_with("--clip="):
 			santa.play(arg.get_slice("=", 1))
+		if arg.begins_with("--gesture="):
+			santa.perform(arg.get_slice("=", 1))
 	if "--wave" in args:
 		await get_tree().create_timer(0.3).timeout
 		santa.wave()

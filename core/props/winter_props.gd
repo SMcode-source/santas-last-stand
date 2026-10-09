@@ -848,6 +848,68 @@ static func snow_ground(size := 120.0, resolution := 80, flat_radius := 7.0, see
 	return root
 
 
+## Santa's toy sack: soft red velvet, bulging and lumpy, gathered at the neck
+## with a gold cord, a few presents peeking out of the open top. The cloth is
+## in a child named "Body" so it can swell as more presents go in.
+static func toy_sack(seed := 1) -> Node3D:
+	var root := Node3D.new()
+	root.name = "ToySack"
+	var b := ToyBuilder.new()
+	var velvet := Color("8e1b1f")
+	var body := ToyBuilder.lathe(PackedVector2Array([
+		Vector2(0.0, 0.0), Vector2(0.26, 0.03), Vector2(0.36, 0.16), Vector2(0.38, 0.34),
+		Vector2(0.33, 0.5), Vector2(0.21, 0.62), Vector2(0.14, 0.68), Vector2(0.15, 0.72),
+		Vector2(0.22, 0.8), Vector2(0.25, 0.83),
+	]), 28)
+	b.finished(ToyBuilder.lumpy(body, 0.035, 5.0, seed), velvet, "velvet")
+	# Dark inside of the open mouth
+	b.add(ToyBuilder.cylinder(0.2, 0.2, 0.01, 20), Color("2a0b0c"), ToyBuilder.xf(Vector3(0, 0.77, 0)))
+	# Gold cord round the neck, its ends hanging down with tassels
+	var cord := Color("c9a14a")
+	b.finished(ToyBuilder.torus(0.15, 0.016, 24, 6), cord, "velvet", ToyBuilder.xf(Vector3(0, 0.69, 0), Vector3(4, 0, 0)))
+	for side: float in [-1.0, 1.0]:
+		b.finished(ToyBuilder.curve(PackedVector3Array([
+			Vector3(0.05 * side, 0.68, 0.15), Vector3(0.09 * side, 0.6, 0.24), Vector3(0.1 * side, 0.48, 0.3),
+		]), PackedFloat32Array([0.014, 0.013, 0.012]), 6, 4), cord, "velvet")
+		b.finished(ToyBuilder.cylinder(0.006, 0.026, 0.07, 10), cord, "velvet", ToyBuilder.xf(Vector3(0.1 * side, 0.44, 0.31)))
+	var sack := b.build(0.0, "Body")
+	root.add_child(sack)
+	# A couple of presents poking out of the top
+	var peek := present(Vector3(0.2, 0.18, 0.2), Color("1e6b3c"), GOLD, GiftBox.Pattern.DOTS, seed + 3)
+	peek.position = Vector3(-0.05, 0.7, 0.02)
+	peek.rotation_degrees = Vector3(14, 25, -10)
+	sack.add_child(peek)
+	var peek2 := present(Vector3(0.16, 0.22, 0.16), Color("2e86de"), Color("f4efe6"), GiftBox.Pattern.STRIPES, seed + 4)
+	peek2.position = Vector3(0.07, 0.68, -0.05)
+	peek2.rotation_degrees = Vector3(-12, -30, 16)
+	sack.add_child(peek2)
+	return root
+
+
+## A round of log stood on end, ready to split, and the two halves it splits
+## into (hidden until split). Returns [whole, left_half, right_half].
+static func log_round(radius := 0.14, height := 0.32) -> Array[Node3D]:
+	var whole := ToyBuilder.new()
+	whole.textured(ToyBuilder.cylinder(radius, radius * 1.04, height, 14), "bark_brown_02",
+			ToyBuilder.xf(Vector3(0, height / 2.0, 0)), 0.5, Color.WHITE, 0.35)
+	var top := MeshPieces.new()
+	top.disc(Vector3(0, height + 0.002, 0), Vector3.UP, Vector3.FORWARD, radius, Color(0.37, 0, 0))
+	var whole_mesh := whole.build(0.0, "LogRound")
+	top.add_to(whole_mesh.mesh, end_grain_material())
+	var parts: Array[Node3D] = [whole_mesh]
+	for side: float in [-1.0, 1.0]:
+		var half := ToyBuilder.new()
+		half.textured(ToyBuilder.cylinder(radius, radius * 1.04, height, 14), "bark_brown_02",
+				ToyBuilder.xf(Vector3(side * radius * 0.5, height / 2.0, 0), Vector3.ZERO, Vector3(0.5, 1, 1)), 0.5)
+		# The fresh pale face of the split
+		half.textured(ToyBuilder.box(Vector3(0.012, height, radius * 1.95)), "wood_trunk_wall",
+				ToyBuilder.xf(Vector3(side * 0.006, height / 2.0, 0)), 0.3, Color("f0d8b0"))
+		var node := half.build(0.0, "LogHalf")
+		node.visible = false
+		parts.append(node)
+	return parts
+
+
 ## Small ground details, added straight into a shared builder so a whole
 ## field of them costs only a handful of draw calls.
 

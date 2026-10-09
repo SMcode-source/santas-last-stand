@@ -19,6 +19,7 @@ func _ready() -> void:
 	_camp = BACKDROP.instantiate()
 	_camp.show_ui = false
 	_camp.orbit_camera = false
+	_camp.santa_routine = false
 	add_child(_camp)
 	_camp.santa.visible = false
 	_camera = _camp.camera
