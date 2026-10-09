@@ -53,6 +53,12 @@ jobs:
       - name: Run unit tests
         run: ~/godot/godot --headless --script res://tests/run_tests.gd
 
+      - name: Bake scenery built from code
+        # Saved ready-made so the game loads it instead of building it (see core/props/baked.gd).
+        run: |
+          ~/godot/godot --headless --path . res://tools/bake.tscn
+          test -f baked/title_camp.scn
+
       - name: Export web build
         run: |
           mkdir -p build/web

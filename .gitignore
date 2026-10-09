@@ -9,3 +9,6 @@ incoming/
 
 # Local test renders
 screenshots/
+
+# Scenery baked for the export by tools/bake.tscn
+baked/

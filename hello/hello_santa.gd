@@ -99,34 +99,14 @@ func _build_environment() -> void:
 
 
 func _build_scene() -> void:
-	# Boot prints from the cabin door, round the woodpile, to where Santa stands.
-	var trail := PackedVector2Array([Vector2(-3.45, -3.5), Vector2(-2.5, -3.45), Vector2(-1.5, -3.0),
-			Vector2(-0.8, -2.0), Vector2(-0.4, -1.0), Vector2(-0.12, -0.3)])
-	add_child(WinterProps.snow_ground(120.0, 80, 7.0, 1, 1, trail))
+	# Everything built from code that never moves. The web build loads it
+	# ready-made (see Baked), which saves seconds of loading.
+	add_child(Baked.node("title_camp"))
 
 	santa = SantaModel.new()
 	add_child(santa)
 
-	_place(WinterProps.log_cabin(), Vector3(-4.2, 0, -5.5), 22)
-	_place(WinterProps.fir_tree(4.2, 7, true, 0.85), Vector3(3.6, 0, -3.8))
-	_place(WinterProps.snowman(), Vector3(3.1, 0, -0.4), -35)
-	_place(WinterProps.lamp_post(), Vector3(-2.4, 0, 0.6))
-	_place(WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
-	_place(WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
-	# Presents that never move, merged so they draw in one go.
-	var gifts: Array[Node3D] = []
-	for spec: Array in [[Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, Vector3(-1.15, 0, 0.0), 18],
-			[Vector3(0.4, 0.32, 0.4), Color("1e6b3c"), Color("b3202c"), GiftBox.Pattern.TARTAN, Vector3(1.05, 0, 0.3), -22],
-			[Vector3(0.32, 0.55, 0.32), Color("5b2a6e"), Color("e8e2d4"), GiftBox.Pattern.DOTS, Vector3(1.4, 0, -0.35), 40],
-			[Vector3(0.7, 0.4, 0.55), Color("b3202c"), Color("f4efe6"), GiftBox.Pattern.STRIPES, Vector3(3.0, 0, -2.2), 10]]:
-		var gift := WinterProps.present(spec[0], spec[1], spec[2], spec[3], gifts.size() + 1)
-		gift.position = spec[4]
-		gift.rotation_degrees.y = spec[5]
-		gifts.append(gift)
-	add_child(GiftBox.merge(gifts))
-
-	# Campfire with a bench, a woodcutter's corner, and the cabin's yard clutter
-	_place(WinterProps.campfire(), Vector3(1.9, 0, -2.3))
+	# A bench by the campfire, a woodcutter's corner, and the cabin's yard clutter
 	_place(PbrLibrary.model("painted_wooden_bench", 0.5), Vector3(2.0, 0, -3.5), 10)
 	var stump := PbrLibrary.model("tree_stump_01", 0.45)
 	_place(stump, Vector3(-2.6, 0, -2.4), 40)
@@ -168,6 +148,42 @@ func _build_scene() -> void:
 	_place(PbrLibrary.model("rock_moss_set_01", 0.6), Vector3(8.5, -0.3, -1.5), 75)
 	_place(PbrLibrary.model("namaqualand_boulder_04", 0.6), Vector3(-9.5, -0.6, 2.0), 120)
 
+	# Falling snow (moved by the graphics card, so it costs no CPU time)
+	var snow := WinterProps.snowfall(400, Vector3(-14, 0, -12.5), Vector3(28, 8.5, 16))
+	add_child(snow)
+
+
+## The camp round Santa: snowy ground, cabin, trees, snowman, lamp post,
+## fences, campfire, a few presents, the forest and the mountains. It is all
+## static and built only from code, so tools/bake.gd can save it for the
+## export (see Baked).
+static func build_camp() -> Node3D:
+	var camp := Node3D.new()
+	camp.name = "Camp"
+	# Boot prints from the cabin door, round the woodpile, to where Santa stands.
+	var trail := PackedVector2Array([Vector2(-3.45, -3.5), Vector2(-2.5, -3.45), Vector2(-1.5, -3.0),
+			Vector2(-0.8, -2.0), Vector2(-0.4, -1.0), Vector2(-0.12, -0.3)])
+	camp.add_child(WinterProps.snow_ground(120.0, 80, 7.0, 1, 1, trail))
+
+	_put(camp, WinterProps.log_cabin(), Vector3(-4.2, 0, -5.5), 22)
+	_put(camp, WinterProps.fir_tree(4.2, 7, true, 0.85), Vector3(3.6, 0, -3.8))
+	_put(camp, WinterProps.snowman(), Vector3(3.1, 0, -0.4), -35)
+	_put(camp, WinterProps.lamp_post(), Vector3(-2.4, 0, 0.6))
+	_put(camp, WinterProps.fence(5.0), Vector3(-7.5, 0, -2.0), 70)
+	_put(camp, WinterProps.fence(4.0), Vector3(7.5, 0, -4.5), -60)
+	# Presents that never move, merged so they draw in one go.
+	var gifts: Array[Node3D] = []
+	for spec: Array in [[Vector3(0.5, 0.45, 0.5), Color("1d4f8c"), WinterProps.GOLD, GiftBox.Pattern.SNOWFLAKES, Vector3(-1.15, 0, 0.0), 18],
+			[Vector3(0.4, 0.32, 0.4), Color("1e6b3c"), Color("b3202c"), GiftBox.Pattern.TARTAN, Vector3(1.05, 0, 0.3), -22],
+			[Vector3(0.32, 0.55, 0.32), Color("5b2a6e"), Color("e8e2d4"), GiftBox.Pattern.DOTS, Vector3(1.4, 0, -0.35), 40],
+			[Vector3(0.7, 0.4, 0.55), Color("b3202c"), Color("f4efe6"), GiftBox.Pattern.STRIPES, Vector3(3.0, 0, -2.2), 10]]:
+		var gift := WinterProps.present(spec[0], spec[1], spec[2], spec[3], gifts.size() + 1)
+		gift.position = spec[4]
+		gift.rotation_degrees.y = spec[5]
+		gifts.append(gift)
+	camp.add_child(GiftBox.merge(gifts))
+	_put(camp, WinterProps.campfire(), Vector3(1.9, 0, -2.3))
+
 	# A forest of snowy pines behind, and mountains on the horizon.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 1225
@@ -191,15 +207,12 @@ func _build_scene() -> void:
 		var forest_part := WinterProps.scatter(mesh, placements[v], false)
 		forest_part.name = "Forest%d" % v
 		forest_part.add_to_group(GraphicsQuality.SHADOWS_ON_HIGH)
-		add_child(forest_part)
-	add_child(_tree_shadows(placements, VARIANT_HEIGHT))
-	add_child(_saplings(placements, VARIANT_HEIGHT, rng))
-	add_child(_ground_details(placements, VARIANT_HEIGHT, rng))
-	add_child(WinterProps.mountain_range())
-
-	# Falling snow (moved by the graphics card, so it costs no CPU time)
-	var snow := WinterProps.snowfall(400, Vector3(-14, 0, -12.5), Vector3(28, 8.5, 16))
-	add_child(snow)
+		camp.add_child(forest_part)
+	camp.add_child(_tree_shadows(placements, VARIANT_HEIGHT))
+	camp.add_child(_saplings(placements, VARIANT_HEIGHT, rng))
+	camp.add_child(_ground_details(placements, VARIANT_HEIGHT, rng))
+	camp.add_child(WinterProps.mountain_range())
+	return camp
 
 
 ## The woodcutter's axe, its blade bitten into the top of the stump and the
@@ -220,7 +233,7 @@ func _axe_in_stump(stump_yaw: float) -> Node3D:
 
 
 ## A few young firs growing between the background trees.
-func _saplings(placements: Array[Array], tree_height: float, rng: RandomNumberGenerator) -> MultiMeshInstance3D:
+static func _saplings(placements: Array[Array], tree_height: float, rng: RandomNumberGenerator) -> MultiMeshInstance3D:
 	var spots: Array[Transform3D] = []
 	for group: Array in placements:
 		for i in range(0, group.size(), 2):
@@ -242,7 +255,7 @@ func _saplings(placements: Array[Array], tree_height: float, rng: RandomNumberGe
 ## draw calls: snow heaped round the trees and pine cones under them, stones,
 ## dry grass and twigs breaking up the open snow, and wood chips and halved
 ## logs round the chopping stump.
-func _ground_details(placements: Array[Array], tree_height: float, rng: RandomNumberGenerator) -> MeshInstance3D:
+static func _ground_details(placements: Array[Array], tree_height: float, rng: RandomNumberGenerator) -> MeshInstance3D:
 	var b := ToyBuilder.new()
 	for group: Array in placements:
 		for t: Transform3D in group:
@@ -288,7 +301,7 @@ func _ground_details(placements: Array[Array], tree_height: float, rng: RandomNu
 
 ## Soft shadows on the snow under the background trees, cast away from the
 ## moon, so the forest sits on the ground even where it casts no real shadows.
-func _tree_shadows(placements: Array[Array], tree_height: float) -> MultiMeshInstance3D:
+static func _tree_shadows(placements: Array[Array], tree_height: float) -> MultiMeshInstance3D:
 	var quad := QuadMesh.new()
 	quad.size = Vector2.ONE
 	quad.orientation = PlaneMesh.FACE_Y
@@ -312,9 +325,13 @@ func _tree_shadows(placements: Array[Array], tree_height: float) -> MultiMeshIns
 
 
 func _place(node: Node3D, pos: Vector3, yaw_deg := 0.0) -> void:
+	_put(self, node, pos, yaw_deg)
+
+
+static func _put(parent: Node, node: Node3D, pos: Vector3, yaw_deg := 0.0) -> void:
 	node.position = pos
 	node.rotation_degrees.y = yaw_deg
-	add_child(node)
+	parent.add_child(node)
 
 
 func _build_ui() -> void:

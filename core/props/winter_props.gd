@@ -1027,6 +1027,8 @@ static func scatter(mesh: Mesh, transforms: Array[Transform3D], shadows := true)
 		multi.set_instance_transform(i, transforms[i])
 	var instance := MultiMeshInstance3D.new()
 	instance.multimesh = multi
+	# Kept so Baked can save the scatter (headless, the renderer forgets them).
+	instance.set_meta("transforms", transforms)
 	if not shadows:
 		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return instance

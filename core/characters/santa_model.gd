@@ -101,7 +101,7 @@ func _dress() -> void:
 	mesh.set_surface_override_material(0, _fabric)
 
 	if _fur_mesh == null:
-		_fur_mesh = _cut_fur(mesh.mesh as ArrayMesh, plain.albedo_texture.get_image())
+		_fur_mesh = Baked.resource("santa_fur")
 	_fur = MeshInstance3D.new()
 	_fur.name = "Fur"
 	_fur.mesh = _fur_mesh
@@ -131,6 +131,17 @@ func apply_quality(level: int) -> void:
 			first = shell
 		previous = shell
 	_fur.material_override = first
+
+
+## Santa's fur, beard and bobble as a mesh of their own, for the fur shells.
+## Baked for the export (see Baked).
+static func build_fur() -> ArrayMesh:
+	var model: Node = SCENE.instantiate()
+	var mesh: MeshInstance3D = model.find_children("*", "MeshInstance3D", true, false)[0]
+	var plain := mesh.mesh.surface_get_material(0) as StandardMaterial3D
+	var fur := _cut_fur(mesh.mesh as ArrayMesh, plain.albedo_texture.get_image())
+	model.free()
+	return fur
 
 
 ## The triangles of `source` whose texture is white or pale grey (fur, beard,
@@ -163,23 +174,35 @@ static func _cut_fur(source: ArrayMesh, albedo: Image) -> ArrayMesh:
 		var top := maxi(pixels[at], maxi(pixels[at + 1], pixels[at + 2]))
 		var low := mini(pixels[at], mini(pixels[at + 1], pixels[at + 2]))
 		is_fur[v] = 1 if top > 140 and top - low < top * 0.25 else 0
-	# Keep a triangle if most of its corners are fur. The vertices are shared
-	# as they are (only the triangle list changes), which keeps this quick in
-	# the web build; the graphics card only touches the vertices in use.
+	# Keep a triangle if most of its corners are fur, and only the vertices those
+	# use. Slow-ish, but the export does it beforehand (see Baked).
+	var remap := PackedInt32Array()
+	remap.resize(uvs.size())
+	remap.fill(-1)
 	var kept := PackedInt32Array()
-	kept.resize(indices.size())
-	var count := 0
+	var used := PackedInt32Array()
 	for t in range(0, indices.size(), 3):
-		var a := indices[t]
-		var b := indices[t + 1]
-		var c := indices[t + 2]
-		if is_fur[a] + is_fur[b] + is_fur[c] >= 2:
-			kept[count] = a
-			kept[count + 1] = b
-			kept[count + 2] = c
-			count += 3
-	kept.resize(count)
-	var result := arrays.duplicate()
+		if is_fur[indices[t]] + is_fur[indices[t + 1]] + is_fur[indices[t + 2]] < 2:
+			continue
+		for k in 3:
+			var old := indices[t + k]
+			if remap[old] < 0:
+				remap[old] = used.size()
+				used.append(old)
+			kept.append(remap[old])
+	var result := []
+	result.resize(Mesh.ARRAY_MAX)
+	for slot in Mesh.ARRAY_MAX:
+		var data = arrays[slot]
+		if data == null or slot == Mesh.ARRAY_INDEX:
+			continue
+		var stride: int = data.size() / uvs.size()
+		var picked = data.duplicate()
+		picked.resize(used.size() * stride)
+		for i in used.size():
+			for c in stride:
+				picked[i * stride + c] = data[used[i] * stride + c]
+		result[slot] = picked
 	result[Mesh.ARRAY_INDEX] = kept
 	var flags := source.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
 	var mesh := ArrayMesh.new()
