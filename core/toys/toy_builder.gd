@@ -47,9 +47,13 @@ class _Bucket:
 			arrays[Mesh.ARRAY_COLOR] = colors
 		return arrays
 
+	## A generated shape (lathe, tube, lumpy...) to merge into a ToyBuilder. It
+	## only carries its arrays: shapes are never drawn on their own, and giving
+	## them a real surface would send each one to the graphics card and back for
+	## nothing (slow, above all in the web build).
 	func to_mesh() -> ArrayMesh:
 		var mesh := ArrayMesh.new()
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, to_arrays())
+		mesh.set_meta("toy_arrays", [verts, normals, indices])
 		return mesh
 
 
@@ -191,7 +195,8 @@ func _append(bucket: _Bucket, mesh: Mesh, color: Color, xform: Transform3D) -> T
 static func _arrays_of(mesh: Mesh) -> Array:
 	if mesh.has_meta("toy_arrays"):
 		return mesh.get_meta("toy_arrays")
-	var arrays := mesh.surface_get_arrays(0)
+	# Primitives can make their arrays on the CPU, without asking the renderer.
+	var arrays := (mesh as PrimitiveMesh).get_mesh_arrays() if mesh is PrimitiveMesh else mesh.surface_get_arrays(0)
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices := PackedInt32Array()
 	if arrays[Mesh.ARRAY_INDEX] != null:

@@ -136,6 +136,16 @@ func apply_quality(level: int) -> void:
 ## The triangles of `source` whose texture is white or pale grey (fur, beard,
 ## bobble), with their skinning, as a mesh of their own.
 static func _cut_fur(source: ArrayMesh, albedo: Image) -> ArrayMesh:
+	# Only a 256-pixel copy is needed: take that mipmap straight out of the
+	# (compressed) texture rather than unpacking the full-size image.
+	var level := 0
+	while albedo.has_mipmaps() and (albedo.get_width() >> level) > 256 and level < albedo.get_mipmap_count():
+		level += 1
+	if level > 0:
+		var start := albedo.get_mipmap_offset(level)
+		var end := albedo.get_mipmap_offset(level + 1) if level < albedo.get_mipmap_count() else albedo.get_data().size()
+		albedo = Image.create_from_data(albedo.get_width() >> level, albedo.get_height() >> level, false,
+				albedo.get_format(), albedo.get_data().slice(start, end))
 	if albedo.is_compressed():
 		albedo.decompress()
 	albedo.resize(256, 256, Image.INTERPOLATE_BILINEAR)
@@ -153,34 +163,23 @@ static func _cut_fur(source: ArrayMesh, albedo: Image) -> ArrayMesh:
 		var top := maxi(pixels[at], maxi(pixels[at + 1], pixels[at + 2]))
 		var low := mini(pixels[at], mini(pixels[at + 1], pixels[at + 2]))
 		is_fur[v] = 1 if top > 140 and top - low < top * 0.25 else 0
-	# Keep a triangle if most of its corners are fur; renumber the vertices it uses.
-	var remap := PackedInt32Array()
-	remap.resize(uvs.size())
-	remap.fill(-1)
+	# Keep a triangle if most of its corners are fur. The vertices are shared
+	# as they are (only the triangle list changes), which keeps this quick in
+	# the web build; the graphics card only touches the vertices in use.
 	var kept := PackedInt32Array()
-	var used := PackedInt32Array()
+	kept.resize(indices.size())
+	var count := 0
 	for t in range(0, indices.size(), 3):
-		if is_fur[indices[t]] + is_fur[indices[t + 1]] + is_fur[indices[t + 2]] < 2:
-			continue
-		for k in 3:
-			var old := indices[t + k]
-			if remap[old] < 0:
-				remap[old] = used.size()
-				used.append(old)
-			kept.append(remap[old])
-	var result := []
-	result.resize(Mesh.ARRAY_MAX)
-	for slot in Mesh.ARRAY_MAX:
-		var data = arrays[slot]
-		if data == null or slot == Mesh.ARRAY_INDEX:
-			continue
-		var stride: int = data.size() / uvs.size()
-		var picked = data.duplicate()
-		picked.resize(used.size() * stride)
-		for i in used.size():
-			for c in stride:
-				picked[i * stride + c] = data[used[i] * stride + c]
-		result[slot] = picked
+		var a := indices[t]
+		var b := indices[t + 1]
+		var c := indices[t + 2]
+		if is_fur[a] + is_fur[b] + is_fur[c] >= 2:
+			kept[count] = a
+			kept[count + 1] = b
+			kept[count + 2] = c
+			count += 3
+	kept.resize(count)
+	var result := arrays.duplicate()
 	result[Mesh.ARRAY_INDEX] = kept
 	var flags := source.surface_get_format(0) & Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS
 	var mesh := ArrayMesh.new()

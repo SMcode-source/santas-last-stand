@@ -63,6 +63,8 @@ static func build(size: Vector3, paper: Color, ribbon: Color, pattern := -1, see
 	var mesh := ArrayMesh.new()
 	paper_surface.add_to(mesh, paper_material())
 	ribbon_surface.add_to(mesh, ribbon_material())
+	# Kept for merge(), so it need not read the mesh back from the renderer.
+	mesh.set_meta("pieces", [paper_surface, ribbon_surface])
 	var instance := MeshInstance3D.new()
 	instance.name = "Mesh"
 	instance.mesh = mesh
@@ -80,14 +82,15 @@ static func merge(presents: Array[Node3D]) -> MeshInstance3D:
 		var part := present.get_node("Mesh") as MeshInstance3D
 		var xform := present.transform * part.transform
 		var normal_basis := xform.basis.inverse().transposed()
+		var sources: Array = part.mesh.get_meta("pieces")
 		for s in 2:
-			var arrays := part.mesh.surface_get_arrays(s)
+			var source: MeshPieces = sources[s]
 			var pieces := MeshPieces.new()
-			pieces.verts = xform * (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array)
-			pieces.normals = Transform3D(normal_basis, Vector3.ZERO) * (arrays[Mesh.ARRAY_NORMAL] as PackedVector3Array)
-			pieces.uvs = arrays[Mesh.ARRAY_TEX_UV]
-			pieces.colors = arrays[Mesh.ARRAY_COLOR]
-			pieces.indices = arrays[Mesh.ARRAY_INDEX]
+			pieces.verts = xform * source.verts
+			pieces.normals = Transform3D(normal_basis, Vector3.ZERO) * source.normals
+			pieces.uvs = source.uvs
+			pieces.colors = source.colors
+			pieces.indices = source.indices
 			_append(merged[s], pieces)
 		present.free()
 	var mesh := ArrayMesh.new()

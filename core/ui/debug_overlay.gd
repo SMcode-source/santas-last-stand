@@ -4,7 +4,8 @@ extends CanvasLayer
 ## the chapter's play time and failures per section while a chapter is running.
 ## Running with `-- --bench` prints the average frame time after a few seconds and quits.
 ## Add `--hide=Name1,Name2` to hide matching nodes (or `--hide=lights`) and see what they cost,
-## and `--off=glow,fog,msaa,sky,tonemap` to switch off whole-screen effects.
+## and `--off=glow,fog,msaa,sky,tonemap,reflect,shadow,glowlite` to switch off whole-screen effects;
+## `--still=Name` stops matching nodes' scripts.
 
 const BENCH_WARMUP := 60
 const BENCH_FRAMES := 300
@@ -132,9 +133,6 @@ func _switch_off(effects: PackedStringArray) -> void:
 			"shadow":
 				for light in get_tree().current_scene.find_children("*", "DirectionalLight3D", true, false):
 					(light as Light3D).shadow_enabled = false
-			"fxaa":
-				get_viewport().msaa_3d = Viewport.MSAA_DISABLED
-				get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
 			"glowlite":
 				for i in 7:
 					env.set_glow_level(i, 0.0)

@@ -105,9 +105,9 @@ func apply() -> void:
 	_sun.directional_shadow_max_distance = 32.0 if level == Level.HIGH else 14.0
 	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if level == Level.HIGH 			else DirectionalLight3D.SHADOW_ORTHOGONAL
 	var viewport := get_viewport()
-	# FXAA smooths edges for a fraction of what MSAA costs on a laptop GPU.
-	viewport.msaa_3d = Viewport.MSAA_2X if level == Level.HIGH else Viewport.MSAA_DISABLED
-	viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED if level == Level.HIGH else Viewport.SCREEN_SPACE_AA_FXAA
+	# MSAA is the only anti-aliasing the Compatibility renderer has (no FXAA);
+	# Low goes without it to save its cost (about 2 ms on a laptop GPU).
+	viewport.msaa_3d = Viewport.MSAA_DISABLED if level == Level.LOW else Viewport.MSAA_2X
 	_fit_resolution()
 	Engine.set_meta("graphics_quality", Level.keys()[level].capitalize())
 	Engine.set_meta("graphics_level", level)
