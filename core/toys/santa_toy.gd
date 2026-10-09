@@ -264,20 +264,21 @@ func _build_head() -> MeshInstance3D:
 		b.painted_finish(ToyBuilder.sphere(1.0, 12), skin, "skin",
 				ToyBuilder.xf(Vector3(0.036 * side, 0.166, 0.093), Vector3(0, 0, -8 * side), Vector3(0.024, 0.009, 0.014)))
 		b.painted_finish(ToyBuilder.sphere(1.0, 16), skin, "skin",
-				ToyBuilder.xf(Vector3(0.047 * side, 0.114, 0.083), Vector3.ZERO, Vector3(0.034, 0.026, 0.013)))
+				ToyBuilder.xf(Vector3(0.046 * side, 0.112, 0.074), Vector3(0, 25 * side, 0), Vector3(0.036, 0.03, 0.02)))
 		# Eyelids hug the top and bottom of each eye
 		b.painted_finish(ToyBuilder.sphere(1.0, 14), skin, "skin",
 				ToyBuilder.xf(Vector3(0.036 * side, 0.1545, 0.0915), Vector3(-10, 0, 0), Vector3(0.0158, 0.0072, 0.0135)))
 		b.painted_finish(ToyBuilder.sphere(1.0, 12), skin, "skin",
 				ToyBuilder.xf(Vector3(0.036 * side, 0.1365, 0.093), Vector3.ZERO, Vector3(0.015, 0.0042, 0.0125)))
 		b.painted_finish(ToyBuilder.sphere(1.0, 10), skin, "skin",
-				ToyBuilder.xf(Vector3(0.012 * side, 0.1, 0.107), Vector3.ZERO, Vector3(0.009, 0.0075, 0.0085)))
+				ToyBuilder.xf(Vector3(0.0125 * side, 0.0995, 0.105), Vector3(0, 20 * side, 0), Vector3(0.0075, 0.0068, 0.0085)))
 	b.painted_finish(ToyBuilder.sphere(1.0, 14), skin, "skin",
 			ToyBuilder.xf(Vector3(0, 0.128, 0.106), Vector3(-22, 0, 0), Vector3(0.0085, 0.026, 0.0105)))
 	b.painted_finish(ToyBuilder.sphere(1.0, 16), skin, "skin",
-			ToyBuilder.xf(Vector3(0, 0.104, 0.117), Vector3.ZERO, Vector3(0.0155, 0.014, 0.0145)))
+			ToyBuilder.xf(Vector3(0, 0.104, 0.1155), Vector3(-10, 0, 0), Vector3(0.0128, 0.0125, 0.0145)))
 	b.finished(ToyBuilder.sphere(1.0, 12), LIP, "skin",
 			ToyBuilder.xf(Vector3(0, 0.058, 0.097), Vector3(8, 0, 0), Vector3(0.018, 0.007, 0.009)))
+	_face_lines(b, rng)
 
 	# Wire spectacles resting on the nose
 	for side: float in [-1.0, 1.0]:
@@ -364,8 +365,9 @@ func _build_head() -> MeshInstance3D:
 				# Strands fan out from the lock's root and gather again at its tip.
 				var p := lock[0].lerp(lock[k], stretch) + offset * sin(t * PI * 0.85) * 1.6
 				points.append(_clear_chest(p))
-			var shade := rng.randf_range(0.9, 1.0)
-			b.strand(points, 0.0075, 0.0015, HAIR_ROOT * shade, HAIR * shade, "hair", 4, beard_centre)
+			var shade := rng.randf_range(0.9, 1.0) * (0.84 if rng.randf() < 0.15 else 1.0)
+			var tint := HAIR.lerp(Color("eee6d6"), 0.5) if rng.randf() < 0.25 else HAIR
+			b.strand(points, 0.0075, 0.0015, HAIR_ROOT * shade, tint * shade, "hair", 4, beard_centre)
 
 	# Wavy white hair puffing out at the sides and back below the hat
 	var hair_centre := Vector3(0, 0.12, -0.01)
@@ -399,14 +401,61 @@ func _build_head() -> MeshInstance3D:
 	return b.build(0.0, "HeadMesh")
 
 
+## Wrinkles and small features that make the face read as a real, older face:
+## soft bags under the eyes, nostrils, forehead lines, laugh lines at the eye
+## corners and pale lashes.
+func _face_lines(b: ToyBuilder, rng: RandomNumberGenerator) -> void:
+	var skin := _skin_tone
+	for side: float in [-1.0, 1.0]:
+		b.painted_finish(ToyBuilder.sphere(1.0, 14), skin, "skin",
+				ToyBuilder.xf(Vector3(0.037 * side, 0.1305, 0.0905), Vector3(-15, 8 * side, 0), Vector3(0.016, 0.0055, 0.009)))
+		b.finished(ToyBuilder.sphere(1.0, 10), Color("6e3a30"), "skin",
+				ToyBuilder.xf(Vector3(0.0085 * side, 0.0935, 0.1115), Vector3(-25, 25 * side, 0), Vector3(0.0045, 0.0018, 0.0055)))
+		# Laugh lines fanning out from the outer eye corner
+		for k in 3:
+			var a := deg_to_rad(-25.0 + k * 25.0)
+			var start := Vector3(0.054 * side, 0.146, 0.087)
+			var dir := Vector3(cos(a) * side * 0.55, sin(a), -0.45 * absf(cos(a))).normalized()
+			b.painted_finish(ToyBuilder.curve(PackedVector3Array([
+				start, start + dir * 0.008, start + dir * 0.015 + Vector3(0, 0, -0.003),
+			]), PackedFloat32Array([0.0004, 0.0012, 0.0003]), 5, 3), skin, "skin")
+		# Pale lashes along the upper lid
+		var lash_colour := Color("bdb6ad")
+		for i in 26:
+			var u := lerpf(-1.0, 1.0, (i + rng.randf()) / 26.0)
+			var root := Vector3(0.036 * side + u * 0.0128, 0.1492 - u * u * 0.0035, 0.1035 - u * u * 0.0045)
+			var out := Vector3(u * 0.25, 0.25, 1.0).normalized()
+			b.strand(PackedVector3Array([root, root + out * 0.003, root + out * 0.0055 + Vector3(0, 0.0022, 0)]),
+					0.00045, 0.00015, lash_colour, lash_colour.lightened(0.3), "hair", 3)
+	# Three shallow forehead folds following the curve of the skull
+	for k in 3:
+		var y := 0.18 + k * 0.0115
+		var squash := sqrt(1.0 - pow((y - 0.13) / 0.118, 2.0))
+		var points := PackedVector3Array()
+		var radii := PackedFloat32Array()
+		for i in 9:
+			var a := lerpf(-0.62, 0.62, i / 8.0) * (1.0 - k * 0.08)
+			points.append(Vector3(sin(a) * 0.098 * squash * 0.985, y + absf(a) * 0.006, 0.005 + cos(a) * 0.108 * squash * 0.985))
+			radii.append(0.0024 * sin(PI * i / 8.0))
+		b.painted_finish(ToyBuilder.curve(points, radii, 6, 3), skin, "skin")
+
+
 ## Eyeballs, centred on the Eyes node so blinking squashes them shut.
 func _build_eyes() -> MeshInstance3D:
 	var b := ToyBuilder.new()
 	for side: float in [-1.0, 1.0]:
 		var at := Vector3(0.036 * side, 0, 0)
-		b.finished(ToyBuilder.sphere(0.0138, 18), EYE_WHITE, "eye", ToyBuilder.xf(at))
-		b.finished(ToyBuilder.sphere(1.0, 16), IRIS, "eye",
-				ToyBuilder.xf(at + Vector3(0, -0.0005, 0.0115), Vector3.ZERO, Vector3(0.0074, 0.0074, 0.003)))
+		# Off-white, a little pink towards the corners
+		b.painted_finish(ToyBuilder.sphere(0.0138, 24), func(v: Vector3) -> Color:
+			return EYE_WHITE.lerp(Color("e8beb4"), smoothstep(0.006, 0.0125, absf(v.x - at.x)) * 0.6),
+			"eye", ToyBuilder.xf(at))
+		# Iris: a dark outer ring, blue flecked body and a paler ring round the pupil
+		var iris_centre := at + Vector3(0, -0.0005, 0.0115)
+		b.painted_finish(ToyBuilder.sphere(1.0, 32), func(v: Vector3) -> Color:
+			var r := Vector2(v.x - iris_centre.x, v.y - iris_centre.y).length() / 0.0074
+			var c := IRIS.lerp(Color("9cc4e2"), smoothstep(0.55, 0.3, r) * 0.6)
+			return c.lerp(Color("23415e"), smoothstep(0.75, 0.97, r)),
+			"eye", ToyBuilder.xf(iris_centre, Vector3.ZERO, Vector3(0.0074, 0.0074, 0.003)))
 		b.finished(ToyBuilder.sphere(1.0, 10), PUPIL, "eye",
 				ToyBuilder.xf(at + Vector3(0, -0.0005, 0.0139), Vector3.ZERO, Vector3(0.0032, 0.0032, 0.001)))
 	return b.build(0.0, "EyesMesh")

@@ -33,5 +33,12 @@ All from https://polyhaven.com, licensed CC0 (public domain), downloaded 9 Oct 2
 | `painted_wooden_bench.glb` | https://polyhaven.com/a/painted_wooden_bench |
 | `wooden_lantern_01.glb` | https://polyhaven.com/a/wooden_lantern_01 |
 
+## Characters: Meshy (CC BY 4.0)
+Generated with Meshy (https://www.meshy.ai) on the free plan, which licenses its output under Creative Commons Attribution 4.0 (https://creativecommons.org/licenses/by/4.0/). **Credit line (must appear in the game's credits):** "3D character models generated with Meshy AI (meshy.ai), CC BY 4.0."
+
+| File in `models/characters/` | Notes |
+|---|---|
+| _(none yet)_ | |
+
 ## Generated in-house
 - `textures/generated/fir_branch.png`: fir needle cards, drawn by `tools/make_textures.gd`. No third-party content.
