@@ -216,11 +216,11 @@ static func build_camp() -> Node3D:
 
 
 ## The woodcutter's axe, its blade bitten into the top of the stump and the
-## handle rising out of it towards where Santa stands to chop. In the model the handle
+## handle rising out of it towards Santa's right hand as he stands to chop. In the model the handle
 ## runs along +y with the head at the top and the cutting edge facing +z.
 func _axe_in_stump(stump_yaw: float) -> Node3D:
 	var axe := PbrLibrary.model("wooden_axe", 0.2)
-	var out := Vector3(0.25, 0, -1).normalized().rotated(Vector3.UP, -stump_yaw)
+	var out := Vector3(-0.61, 0, -0.79).normalized().rotated(Vector3.UP, -stump_yaw)
 	var lift := deg_to_rad(35.0)
 	var head_dir := -(out * cos(lift) + Vector3.UP * sin(lift))
 	var edge_dir := (Vector3.DOWN - head_dir * Vector3.DOWN.dot(head_dir)).normalized()

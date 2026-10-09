@@ -30,6 +30,18 @@ const BLEND := 0.45
 const ARM_SPREAD := deg_to_rad(14.0)
 const ELBOW_BEND := deg_to_rad(18.0)
 
+# Points on the axe model: the handle runs along +y with the head at the top
+# and the cutting edge facing +z.
+const AXE_EDGE := Vector3(0, 0.37, 0.17)
+## Where each hand holds the handle: the left at the very end, the right just
+## above it. The right hand alone pulls the axe out and puts it back.
+const AXE_GRIPS := {"Left": Vector3(0, -0.19, 0), "Right": Vector3(0, -0.08, 0)}
+## How far the axe turns from the blow to the top of the backswing (radians).
+const AXE_SWING := 2.85
+## How far each finger joint curls round a handle (radians), knuckle to tip.
+const FINGER_CURL := [1.05, 1.25, 0.8]
+const FINGERS := ["Index", "Middle", "Ring", "Pinky"]
+
 var skeleton: Skeleton3D
 var animations: AnimationPlayer
 
@@ -46,9 +58,17 @@ var _until_gesture := 2.5
 # Something in his hands: "axe" (gripped by the handle) or "box" (between both hands).
 var _held: Node3D
 var _held_mode := ""
-## Where a swung axe should land (global); the blade is aimed at it on the downswing.
+## Where a swung axe should land (global): the blade bites here at each blow.
 var strike_point := Vector3.INF
-var _aim := 0.0
+## Where the axe sits while it is not in his hands (global). While this is
+## set, perform("reach") puts his right hand on its handle there, and he
+## takes it out and puts it back exactly there.
+var axe_rest: Variant = null
+# The axe's place this frame, and where each hand should be: side -> [point, weight].
+var _axe_xf := Transform3D()
+var _hand_targets := {}
+# Finger joint -> its curl axis in the joint's own space.
+var _curl_axes := {}
 var _rng := RandomNumberGenerator.new()
 # Height of the hips above the feet, in skeleton units, for the weight shift.
 var _hip_height := 1.0
@@ -77,12 +97,14 @@ func _ready() -> void:
 		if animations.has_animation(clip):
 			animations.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
 	for bone in ["Hips", "Spine", "Spine1", "Spine2", "Neck", "Head",
-			"LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand"]:
+			"LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand",
+			"LeftHandMiddle1", "RightHandMiddle1"]:
 		var index := skeleton.find_bone("mixamorig_" + bone)
 		_bones[bone] = index
 		_rest_global[bone] = skeleton.get_bone_global_rest(index).basis.orthonormalized()
 	_hip_rest = skeleton.get_bone_rest(_bones["Hips"]).origin
 	_hip_height = skeleton.get_bone_global_rest(_bones["Hips"]).origin.y
+	_find_curl_axes()
 	_rng.randomize()
 	_process(0.0)
 
@@ -318,8 +340,9 @@ func _process(delta: float) -> void:
 	# The head drifts about on its own, and follows whatever he is doing.
 	var look_yaw := _mix(sin(_time * 0.45) * 0.16 + sin(_time * 1.3) * 0.03, prev, cur, "yaw", w_prev, w)
 	var look_pitch := _mix(sin(_time * 0.7) * 0.04, prev, cur, "pitch", w_prev, w)
-	_aim = _mix(0.0, prev, cur, "aim", w_prev, w)
 	_turn("Head", Vector3.UP, look_yaw, Vector3.RIGHT, look_pitch)
+
+	_update_axe(w_prev, w)
 
 	var wave_amount := smoothstep(0.0, 0.15, _wave) * smoothstep(1.0, 0.85, _wave)
 	for side: float in [1.0, -1.0]:
@@ -334,6 +357,14 @@ func _process(delta: float) -> void:
 			if not arm.is_empty() and layer[1] > 0.0:
 				arm_dir = arm_dir.slerp(arm[0], layer[1])
 				fore_dir = fore_dir.slerp(arm[1], layer[1])
+		# A hand on something (the axe handle) goes exactly there.
+		var hand: Array = _hand_targets.get(prefix, [])
+		var grip := 0.0
+		if not hand.is_empty() and hand[1] > 0.0:
+			var reach := _arm_ik(prefix, hand[0], Vector3(side * 0.8, -0.45, -0.4).normalized())
+			arm_dir = arm_dir.slerp(reach[0], hand[1])
+			fore_dir = fore_dir.slerp(reach[1], hand[1])
+			grip = hand[1]
 		if side < 0.0 and wave_amount > 0.0:
 			# Elbow kept low and forward (raising it to the shoulder tears the
 			# coat open under the arm), forearm up and swinging.
@@ -342,6 +373,7 @@ func _process(delta: float) -> void:
 			arm_dir = arm_dir.slerp(wave_arm, wave_amount)
 			fore_dir = fore_dir.slerp(wave_fore, wave_amount)
 		_aim_arm(prefix, arm_dir, fore_dir)
+		_curl_fingers(prefix, grip)
 	_place_held()
 
 
@@ -403,7 +435,7 @@ func _pose(gesture: String, t: float) -> Dictionary:
 			# rather than swinging down between his legs.
 			var arm_angle := lerpf(0.45, -1.25, raise)
 			var fore_angle := lerpf(0.25, -2.1, raise)
-			return {"bend": lerpf(0.4, -0.15, raise), "pitch": lerpf(0.4, 0.0, raise), "aim": 1.0 - raise,
+			return {"bend": lerpf(0.4, -0.15, raise), "pitch": lerpf(0.4, 0.0, raise), "raise": raise,
 				"Left": [_arc(arm_angle, -0.14), _arc(fore_angle, -0.22)],
 				"Right": [_arc(arm_angle, 0.14), _arc(fore_angle, 0.22)]}
 		"pick_up":
@@ -435,19 +467,113 @@ func _place_held() -> void:
 	if _held_mode == "box":
 		_held.global_transform = Transform3D(body, (left + right) / 2.0 + body * Vector3(0, -0.06, 0.07))
 		return
-	# Axe: the handle carries on from the forearm, cocked a little further down
-	# at the wrist, with the cutting edge leading the swing. In the model the
-	# handle runs along +y with the head at the top and the edge facing +z.
-	var fore := skeleton.get_bone_global_pose(_bones["RightHand"]).origin \
-			- skeleton.get_bone_global_pose(_bones["RightForeArm"]).origin
-	var along := (to_world.basis * fore).normalized()
-	along = along.rotated(body.x, 0.45)
-	var grip := (left + right) / 2.0
-	if _aim > 0.0 and strike_point.is_finite():
-		along = along.slerp((strike_point - grip).normalized(), _aim)
-	var edge := along.rotated(body.x, PI / 2.0)
-	var basis := Basis(along.cross(edge), along, edge).orthonormalized()
-	_held.global_transform = Transform3D(basis, grip - basis * Vector3(0, -0.1, 0))
+	_held.global_transform = _axe_xf
+
+
+## Works out where the axe is this frame, and where his hands go on it.
+## Reaching, it is where it rests (his right hand goes to its handle);
+## chopping, it follows the swing with both hands on it. In between the two
+## blend, so it never jumps.
+func _update_axe(w_prev: float, w: float) -> void:
+	_hand_targets.clear()
+	var holding := _held != null and _held_mode == "axe"
+	var reach_w := (w if _gesture == "reach" else 0.0) + (w_prev if _prev_gesture == "reach" else 0.0)
+	var chop_w := (w if _gesture == "chop" else 0.0) + (w_prev if _prev_gesture == "chop" else 0.0)
+	if axe_rest == null or (not holding and reach_w <= 0.0):
+		return
+	var rest: Transform3D = axe_rest
+	if not holding:
+		_hand_targets["Right"] = [rest * AXE_GRIPS["Right"], reach_w]
+		return
+	var xf := rest
+	if chop_w > 0.0 and strike_point.is_finite():
+		var t := _gesture_time if _gesture == "chop" else _prev_time
+		var swing := _swing(_pose("chop", t)["raise"])
+		xf = swing.interpolate_with(rest, reach_w / (reach_w + chop_w))
+	_axe_xf = xf
+	_hand_targets["Right"] = [xf * AXE_GRIPS["Right"], 1.0]
+	_hand_targets["Left"] = [xf * AXE_GRIPS["Left"], clampf(chop_w / maxf(reach_w + chop_w, 0.001), 0.0, 1.0)]
+
+
+## The axe's place in a chop: `raise` 1 is the top of the backswing, held
+## behind his head; 0 is the blow, the edge biting into strike_point.
+func _swing(raise: float) -> Transform3D:
+	var body := global_basis.orthonormalized()
+	var shoulders := skeleton.global_transform * ((_bone_origin("LeftArm") + _bone_origin("RightArm")) / 2.0)
+	var pivot := shoulders + body.z * 0.05 + Vector3.DOWN * 0.15
+	var along := (strike_point - pivot).normalized()
+	var edge := (Vector3.DOWN - along * along.dot(Vector3.DOWN)).normalized()
+	var at_blow := Basis(along.cross(edge), along, edge)
+	var blow := Transform3D(at_blow, strike_point + Vector3.DOWN * 0.02 - at_blow * AXE_EDGE)
+	if raise <= 0.0:
+		return blow
+	var ahead := Vector3(along.x, 0, along.z).normalized()
+	var side := Vector3.UP.cross(ahead)
+	var at_top := Basis(side, -AXE_SWING) * at_blow
+	var grip: Vector3 = (AXE_GRIPS["Left"] + AXE_GRIPS["Right"]) / 2.0
+	var top_grip := shoulders + Vector3.UP * 0.32 - ahead * 0.04
+	var basis := at_blow.slerp(at_top, raise)
+	# The hands travel round his shoulders rather than straight across.
+	var hands := shoulders + (blow * grip - shoulders).slerp(top_grip - shoulders, raise)
+	return Transform3D(basis, hands - basis * grip)
+
+
+## Upper arm and forearm directions (as _aim_arm takes them) that put the palm
+## of `prefix` hand at `target` (global), the elbow bending towards `pole`
+## (skeleton space).
+func _arm_ik(prefix: String, target: Vector3, pole: Vector3) -> Array:
+	var arm_bone: int = _bones[prefix + "Arm"]
+	var shoulder := skeleton.get_bone_global_pose(arm_bone).origin
+	var upper := _bone_origin(prefix + "ForeArm").distance_to(_bone_origin(prefix + "Arm"))
+	var lower := _bone_origin(prefix + "Hand").distance_to(_bone_origin(prefix + "ForeArm"))
+	var palm := _bone_origin(prefix + "HandMiddle1").distance_to(_bone_origin(prefix + "Hand")) * 0.6
+	var goal := skeleton.global_transform.affine_inverse() * target
+	# The wrist stops a palm's length short of what the hand closes round.
+	goal -= (goal - shoulder).normalized() * palm
+	var reach := goal - shoulder
+	var dist := clampf(reach.length(), 0.01, (upper + lower) * 0.999)
+	var dir := reach.normalized()
+	var cos_a := clampf((upper * upper + dist * dist - lower * lower) / (2.0 * upper * dist), -1.0, 1.0)
+	var bend := (pole - dir * pole.dot(dir)).normalized()
+	var arm_dir := dir * cos_a + bend * sqrt(1.0 - cos_a * cos_a)
+	var fore_dir := (dir * dist - arm_dir * upper).normalized()
+	# _aim_arm turns the arm as if the torso were upright; allow for its lean.
+	var parent := skeleton.get_bone_global_pose(skeleton.get_bone_parent(arm_bone)).basis.orthonormalized()
+	var upright := _parent_rest(prefix + "Arm") * parent.inverse()
+	return [upright * arm_dir, upright * fore_dir]
+
+
+## Finds, for each finger joint, the axis that curls it into the palm.
+func _find_curl_axes() -> void:
+	for prefix in ["Left", "Right"]:
+		var hand := _rest_origin(prefix + "Hand")
+		var along := _rest_origin(prefix + "HandMiddle1") - hand
+		var across := _rest_origin(prefix + "HandIndex1") - _rest_origin(prefix + "HandPinky1")
+		var palm := along.cross(across).normalized()
+		# The thumb sits on the palm side.
+		if palm.dot(_rest_origin(prefix + "HandThumb3") - hand) < 0.0:
+			palm = -palm
+		var axis := along.cross(palm).normalized()
+		for finger in FINGERS:
+			for joint in 3:
+				var bone := skeleton.find_bone("mixamorig_%sHand%s%d" % [prefix, finger, joint + 1])
+				if bone >= 0:
+					_curl_axes[bone] = (skeleton.get_bone_global_rest(bone).basis.orthonormalized().inverse() * axis).normalized()
+
+
+## Curls the fingers of one hand round a handle by `amount` (0 open, 1 closed).
+func _curl_fingers(prefix: String, amount: float) -> void:
+	for finger in FINGERS:
+		for joint in 3:
+			var bone := skeleton.find_bone("mixamorig_%sHand%s%d" % [prefix, finger, joint + 1])
+			if not _curl_axes.has(bone):
+				continue
+			var rest := skeleton.get_bone_rest(bone).basis.get_rotation_quaternion()
+			skeleton.set_bone_pose_rotation(bone, rest * Quaternion(_curl_axes[bone], FINGER_CURL[joint] * amount))
+
+
+func _rest_origin(bone: String) -> Vector3:
+	return skeleton.get_bone_global_rest(skeleton.find_bone("mixamorig_" + bone)).origin
 
 
 ## Rotates a bone from its rest pose about up to two skeleton-space axes.

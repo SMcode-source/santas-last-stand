@@ -25,8 +25,8 @@ var _sack_body: Node3D
 var _wave_requested := false
 
 const HOME := Vector3.ZERO
-# Behind the stump, so he chops facing the camera.
-const CHOP_SPOT := Vector3(-2.42, 0, -3.22)
+# Behind the stump, so he chops facing the camera, close enough to reach.
+const CHOP_SPOT := Vector3(-2.46, 0, -3.06)
 const PACK_SPOT := Vector3(1.65, 0, -1.2)
 
 
@@ -140,6 +140,7 @@ func _turn_toward(direction: Vector3, delta: float) -> void:
 func _chop() -> void:
 	var target := log_whole.global_position
 	await _face(target)
+	santa.axe_rest = axe_rest
 	santa.perform("reach")
 	await _wait(0.75)
 	santa.hold(axe, "axe")
@@ -156,14 +157,18 @@ func _chop() -> void:
 	await _wait(0.6)
 	santa.let_go()
 	santa.strike_point = Vector3.INF
+	santa.axe_rest = null
 	axe.global_transform = axe_rest
 	santa.relax()
 	await _wait(0.5)
 
 
-## Picks the presents up one at a time, turns and drops each into the sack.
+## Picks the presents up one at a time, from the top of the pile down, turns
+## and drops each into the sack.
 func _pack() -> void:
-	for item in pile:
+	var top_down := pile.duplicate()
+	top_down.sort_custom(func(a: Node3D, b: Node3D) -> bool: return a.global_position.y > b.global_position.y)
+	for item: Node3D in top_down:
 		if not item.visible:
 			continue
 		await _face(item.global_position)
