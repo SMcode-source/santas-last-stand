@@ -10,9 +10,12 @@ var _time := 0.0
 
 
 func _ready() -> void:
+	var start := Time.get_ticks_msec()
 	_build_environment()
 	_build_scene()
 	_build_ui()
+	add_child(DebugOverlay.new())
+	Engine.set_meta("startup_ms", Time.get_ticks_msec() - start)
 
 
 func _build_environment() -> void:
@@ -25,13 +28,17 @@ func _build_environment() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("7d8fc4")
-	env.ambient_light_energy = 0.42
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.ambient_light_color = Color("6f82bd")
+	env.ambient_light_energy = 0.7
+	env.tonemap_mode = Environment.TONE_MAPPER_AGX
+	env.tonemap_exposure = 1.1
+	env.ssao_enabled = true
+	env.ssao_radius = 0.8
+	env.ssao_intensity = 1.6
 	env.glow_enabled = true
-	env.glow_intensity = 0.55
-	env.glow_bloom = 0.05
-	env.glow_hdr_threshold = 1.3
+	env.glow_intensity = 0.6
+	env.glow_bloom = 0.04
+	env.glow_hdr_threshold = 1.2
 	env.fog_enabled = true
 	env.fog_light_color = Color("3b3a6e")
 	env.fog_density = 0.012
@@ -43,8 +50,9 @@ func _build_environment() -> void:
 	# Cool moonlight from front-left, so faces read clearly.
 	var moon := DirectionalLight3D.new()
 	moon.light_color = Color("c9d6ff")
-	moon.light_energy = 0.9
+	moon.light_energy = 1.6
 	moon.shadow_enabled = true
+	moon.shadow_blur = 1.5
 	moon.directional_shadow_max_distance = 40.0
 	add_child(moon)
 	moon.look_at_from_position(Vector3(-6, 10, 8), Vector3.ZERO)

@@ -2,21 +2,25 @@ class_name ToyBuilder
 extends RefCounted
 ## Builds detailed toy-style models by merging many shapes into a single mesh.
 ##
-## Colours are stored per vertex, so a whole figure needs only two materials
-## (cel-shaded with outline, and glowing). That keeps draw calls low on the web.
-## Shape generators (lathe, tube, star) let us make smooth, curvy silhouettes
-## rather than plain primitives.
+## Painted parts store their colour per vertex and share one material; textured
+## parts are grouped per texture set; glowing parts share a bloom material.
+## That keeps draw calls low on the web. Shape generators (lathe, tube, star)
+## give smooth, curvy silhouettes rather than plain primitives.
 
 const TOON_SHADER := preload("res://core/visual/toon.gdshader")
 const OUTLINE_SHADER := preload("res://core/visual/toon_outline.gdshader")
 const GLOW_SHADER := preload("res://core/visual/glow.gdshader")
 
+## Global art style switch: cel-shaded cartoon, or stylised-realistic PBR.
+static var cartoon_shading := false
+
 static var _material_cache := {}
 static var _front_sign := 0.0
 static var _unit_sphere: SphereMesh
+static var _shape_cache := {}
 
-var _solid := _Bucket.new()
-var _glow := _Bucket.new()
+## Bucket key -> _Bucket. Keys: "painted", "glow", or "tex|<set>|<tile>|<tint>".
+var _buckets := {}
 
 
 class _Bucket:
@@ -48,35 +52,70 @@ class _Bucket:
 
 ## Adds `mesh` in the given colour. `glow` parts are self-lit and bloom.
 func add(mesh: Mesh, color: Color, xform := Transform3D.IDENTITY, glow := false) -> ToyBuilder:
-	var bucket := _glow if glow else _solid
-	var arrays := mesh.surface_get_arrays(0)
-	var src_verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var src_normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
-	var src_indices := PackedInt32Array()
-	if arrays[Mesh.ARRAY_INDEX] != null:
-		src_indices = arrays[Mesh.ARRAY_INDEX]
-	if src_indices.is_empty():
-		src_indices.resize(src_verts.size())
-		for i in src_verts.size():
-			src_indices[i] = i
+	return _append(_bucket("glow" if glow else "painted"), mesh, color, xform)
 
+
+## Adds `mesh` using a realistic texture set from assets/textures.
+func textured(mesh: Mesh, texture_set: String, xform := Transform3D.IDENTITY,
+		tile_size := 1.0, tint := Color.WHITE) -> ToyBuilder:
+	var key := "tex|%s|%s|%s" % [texture_set, tile_size, tint.to_html()]
+	return _append(_bucket(key), mesh, Color.WHITE, xform)
+
+
+func _bucket(key: String) -> _Bucket:
+	if not _buckets.has(key):
+		_buckets[key] = _Bucket.new()
+	return _buckets[key]
+
+
+func _append(bucket: _Bucket, mesh: Mesh, color: Color, xform: Transform3D) -> ToyBuilder:
+	var src := _arrays_of(mesh)
+	var src_verts: PackedVector3Array = src[0]
+	var src_normals: PackedVector3Array = src[1]
+	var src_indices: PackedInt32Array = src[2]
+
+	# Whole-array transforms run natively, which matters a lot in the web build.
 	var normal_basis := xform.basis.inverse().transposed()
-	var mirrored := xform.basis.determinant() < 0.0
+	normal_basis = normal_basis * (1.0 / pow(absf(normal_basis.determinant()), 1.0 / 3.0))
 	var base := bucket.verts.size()
-	var linear := color.srgb_to_linear()
-	for i in src_verts.size():
-		bucket.verts.append(xform * src_verts[i])
-		bucket.normals.append((normal_basis * src_normals[i]).normalized())
-		bucket.colors.append(linear)
-	for t in range(0, src_indices.size(), 3):
-		bucket.indices.append(base + src_indices[t])
-		if mirrored:
-			bucket.indices.append(base + src_indices[t + 2])
-			bucket.indices.append(base + src_indices[t + 1])
-		else:
-			bucket.indices.append(base + src_indices[t + 1])
-			bucket.indices.append(base + src_indices[t + 2])
+	bucket.verts.append_array(xform * src_verts)
+	bucket.normals.append_array(Transform3D(normal_basis, Vector3.ZERO) * src_normals)
+	var colors := PackedColorArray()
+	colors.resize(src_verts.size())
+	colors.fill(color.srgb_to_linear())
+	bucket.colors.append_array(colors)
+
+	var mirrored := xform.basis.determinant() < 0.0
+	var start := bucket.indices.size()
+	var count := src_indices.size()
+	bucket.indices.resize(start + count)
+	var second := 2 if mirrored else 1
+	var third := 1 if mirrored else 2
+	for t in range(0, count, 3):
+		bucket.indices[start + t] = base + src_indices[t]
+		bucket.indices[start + t + 1] = base + src_indices[t + second]
+		bucket.indices[start + t + 2] = base + src_indices[t + third]
 	return self
+
+
+## Vertex, normal and index arrays of a mesh. Cached for the shared primitives,
+## which are reused hundreds of times per model.
+static func _arrays_of(mesh: Mesh) -> Array:
+	if mesh.has_meta("toy_arrays"):
+		return mesh.get_meta("toy_arrays")
+	var arrays := mesh.surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices := PackedInt32Array()
+	if arrays[Mesh.ARRAY_INDEX] != null:
+		indices = arrays[Mesh.ARRAY_INDEX]
+	if indices.is_empty():
+		indices.resize(verts.size())
+		for i in verts.size():
+			indices[i] = i
+	var result := [verts, arrays[Mesh.ARRAY_NORMAL], indices]
+	if mesh is PrimitiveMesh:
+		mesh.set_meta("toy_arrays", result)
+	return result
 
 
 ## Shorthand for add() with position, rotation (degrees) and scale.
@@ -128,16 +167,17 @@ func fluff_path(points: PackedVector3Array, puff: float, color: Color, spacing :
 
 
 ## Produces a MeshInstance3D holding everything added so far.
+## `outline` only applies when cartoon_shading is on.
 func build(outline := 0.012, node_name := "Toy") -> MeshInstance3D:
 	var mesh := ArrayMesh.new()
 	var surface := 0
-	if not _solid.is_empty():
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _solid.to_arrays())
-		mesh.surface_set_material(surface, toon_material(outline))
+	for key: String in _buckets:
+		var bucket: _Bucket = _buckets[key]
+		if bucket.is_empty():
+			continue
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, bucket.to_arrays())
+		mesh.surface_set_material(surface, _material_for(key, outline))
 		surface += 1
-	if not _glow.is_empty():
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _glow.to_arrays())
-		mesh.surface_set_material(surface, glow_material())
 	var instance := MeshInstance3D.new()
 	instance.name = node_name
 	instance.mesh = mesh
@@ -145,6 +185,15 @@ func build(outline := 0.012, node_name := "Toy") -> MeshInstance3D:
 
 
 # --- Materials ----------------------------------------------------------------
+
+static func _material_for(key: String, outline: float) -> Material:
+	if key == "glow":
+		return glow_material()
+	if key == "painted":
+		return toon_material(outline) if cartoon_shading else PbrLibrary.painted()
+	var parts := key.split("|")
+	return PbrLibrary.material(parts[1], float(parts[2]), Color.html(parts[3]))
+
 
 static func toon_material(outline := 0.012) -> ShaderMaterial:
 	var key := "toon_%.4f" % outline
@@ -180,7 +229,18 @@ static func unit_sphere() -> SphereMesh:
 	return _unit_sphere
 
 
+## Primitive shapes are cached by their parameters: callers must not modify them.
+static func _cached(key: String, make: Callable) -> PrimitiveMesh:
+	if not _shape_cache.has(key):
+		_shape_cache[key] = make.call()
+	return _shape_cache[key]
+
+
 static func sphere(radius: float, segments := 16) -> SphereMesh:
+	return _cached("s%s|%d" % [radius, segments], _make_sphere.bind(radius, segments))
+
+
+static func _make_sphere(radius: float, segments: int) -> SphereMesh:
 	var m := SphereMesh.new()
 	m.radius = radius
 	m.height = radius * 2.0
@@ -190,6 +250,10 @@ static func sphere(radius: float, segments := 16) -> SphereMesh:
 
 
 static func capsule(radius: float, height: float, segments := 16) -> CapsuleMesh:
+	return _cached("c%s|%s|%d" % [radius, height, segments], _make_capsule.bind(radius, height, segments))
+
+
+static func _make_capsule(radius: float, height: float, segments: int) -> CapsuleMesh:
 	var m := CapsuleMesh.new()
 	m.radius = radius
 	m.height = height
@@ -199,6 +263,10 @@ static func capsule(radius: float, height: float, segments := 16) -> CapsuleMesh
 
 
 static func cylinder(top: float, bottom: float, height: float, segments := 16) -> CylinderMesh:
+	return _cached("y%s|%s|%s|%d" % [top, bottom, height, segments], _make_cylinder.bind(top, bottom, height, segments))
+
+
+static func _make_cylinder(top: float, bottom: float, height: float, segments: int) -> CylinderMesh:
 	var m := CylinderMesh.new()
 	m.top_radius = top
 	m.bottom_radius = bottom
@@ -208,6 +276,10 @@ static func cylinder(top: float, bottom: float, height: float, segments := 16) -
 
 
 static func box(size: Vector3) -> BoxMesh:
+	return _cached("b%s" % size, _make_box.bind(size))
+
+
+static func _make_box(size: Vector3) -> BoxMesh:
 	var m := BoxMesh.new()
 	m.size = size
 	return m
@@ -215,6 +287,11 @@ static func box(size: Vector3) -> BoxMesh:
 
 ## Torus lying flat in the XZ plane.
 static func torus(ring_radius: float, tube_radius: float, ring_segments := 24, tube_segments := 10) -> TorusMesh:
+	return _cached("t%s|%s|%d|%d" % [ring_radius, tube_radius, ring_segments, tube_segments],
+			_make_torus.bind(ring_radius, tube_radius, ring_segments, tube_segments))
+
+
+static func _make_torus(ring_radius: float, tube_radius: float, ring_segments: int, tube_segments: int) -> TorusMesh:
 	var m := TorusMesh.new()
 	m.inner_radius = ring_radius - tube_radius
 	m.outer_radius = ring_radius + tube_radius

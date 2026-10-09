@@ -2,7 +2,8 @@ class_name WinterProps
 ## Builders for detailed winter props, shared by the North Pole, Alpine and
 ## Icelandic levels. Each returns a Node3D ready to place in a scene.
 
-const SNOW := Color("dfe7f2")
+const SNOW := Color("e4ebf5")
+const SNOW_TINT := Color("e8eef8")
 const ICE := Color("bfe3f5")
 const PINE := Color("2d6a3e")
 const BARK := Color("5b3a1e")
@@ -27,7 +28,7 @@ static func pine_tree(height: float, seed := 1, decorated := false) -> Node3D:
 	rng.seed = seed
 	var b := ToyBuilder.new()
 	var trunk_h := height * 0.12
-	b.part(ToyBuilder.cylinder(height * 0.035, height * 0.05, trunk_h, 8), BARK, Vector3(0, trunk_h / 2.0, 0))
+	b.textured(ToyBuilder.cylinder(height * 0.035, height * 0.05, trunk_h, 8), "bark_brown_02", ToyBuilder.xf(Vector3(0, trunk_h / 2.0, 0)), 0.8)
 
 	var tiers := 4
 	var tier_tops := []
@@ -46,7 +47,7 @@ static func pine_tree(height: float, seed := 1, decorated := false) -> Node3D:
 			Vector2(0, h * 0.5), Vector2(r * 0.5, h * 0.5), Vector2(r * 0.44, h * 0.6),
 			Vector2(r * 0.2, h * 0.86), Vector2(0, h * 1.02),
 		]), 10)
-		b.add(cap, SNOW, ToyBuilder.xf(Vector3(0, base, 0), twist))
+		b.textured(cap, "snow_02", ToyBuilder.xf(Vector3(0, base, 0), twist), 1.5, SNOW_TINT)
 		b.fluff_ring(Vector3(0, base + h * 0.04, 0), r * 0.92, r * 0.07, SNOW, 10, Vector3.ZERO, seed + i)
 		tier_tops.append([base, h, r])
 
@@ -131,20 +132,21 @@ static func log_cabin(seed := 1) -> Node3D:
 	var log_r := 0.14
 	var rows := 7
 
-	b.part(ToyBuilder.box(Vector3(4.4, 0.3, 3.4)), STONE, Vector3(0, 0.15, 0))
+	b.textured(ToyBuilder.box(Vector3(4.4, 0.3, 3.4)), "old_stone_wall", ToyBuilder.xf(Vector3(0, 0.15, 0)), 1.2)
 	for k in rows:
 		var y := 0.42 + k * log_r * 1.9
-		var tint := LOG if k % 2 == 0 else LOG_DARK
+		var tint := Color.WHITE if k % 2 == 0 else Color("d8d0c8")
 		for z in [-1.5, 1.5]:
-			b.part(ToyBuilder.cylinder(log_r, log_r, 4.5, 10), tint, Vector3(0, y, z), Vector3(0, 0, 90))
+			b.textured(ToyBuilder.cylinder(log_r, log_r, 4.5, 10), "wood_trunk_wall", ToyBuilder.xf(Vector3(0, y, z), Vector3(0, 0, 90)), 1.6, tint)
 		for x in [-2.0, 2.0]:
-			b.part(ToyBuilder.cylinder(log_r, log_r, 3.5, 10), tint.darkened(0.06), Vector3(x, y + log_r * 0.95, 0), Vector3(90, 0, 0))
+			b.textured(ToyBuilder.cylinder(log_r, log_r, 3.5, 10), "wood_trunk_wall", ToyBuilder.xf(Vector3(x, y + log_r * 0.95, 0), Vector3(90, 0, 0)), 1.6, tint)
 	# Gables
 	var wall_top := 0.42 + rows * log_r * 1.9
+	# Gables sit on the side walls, under the roof slopes.
 	for k in 5:
-		var length := 4.0 * (1.0 - (k + 1) / 6.0)
-		for z in [-1.5, 1.5]:
-			b.part(ToyBuilder.cylinder(log_r, log_r, length, 10), LOG, Vector3(0, wall_top + k * log_r * 1.8, z), Vector3(0, 0, 90))
+		var length := 3.0 * (1.0 - (k + 1) / 6.0)
+		for x in [-2.0, 2.0]:
+			b.textured(ToyBuilder.cylinder(log_r, log_r, length, 10), "wood_trunk_wall", ToyBuilder.xf(Vector3(x, wall_top + k * log_r * 1.8, 0), Vector3(90, 0, 0)), 1.6)
 
 	# Roof slabs with thick snow
 	var ridge := wall_top + 1.25
@@ -156,8 +158,8 @@ static func log_cabin(seed := 1) -> Node3D:
 		var centre := Vector3(0, (ridge + eave) / 2.0, half / 2.0 * side)
 		var rot := Vector3(angle * side, 0, 0)
 		var normal := Basis.from_euler(rot * PI / 180.0) * Vector3.UP
-		b.part(ToyBuilder.box(Vector3(5.0, 0.16, slope_len)), Color("5a3a2a"), centre, rot)
-		b.part(ToyBuilder.box(Vector3(5.05, 0.16, slope_len - 0.05)), SNOW, centre + normal * 0.15, rot)
+		b.textured(ToyBuilder.box(Vector3(5.0, 0.16, slope_len)), "brown_planks_04", ToyBuilder.xf(centre, rot), 1.5, Color("b08a70"))
+		b.textured(ToyBuilder.box(Vector3(5.05, 0.16, slope_len - 0.05)), "snow_02", ToyBuilder.xf(centre + normal * 0.15, rot), 1.5, SNOW_TINT)
 		var eave_pos := Vector3(0, eave - 0.18, (half + 0.25) * side) + normal * 0.15
 		for k in 22:
 			var x := lerpf(-2.45, 2.45, k / 21.0)
@@ -175,8 +177,8 @@ static func log_cabin(seed := 1) -> Node3D:
 
 	# Chimney with snow cap and smoke
 	var chimney := Vector3(1.2, ridge - 0.1, -0.6)
-	b.part(ToyBuilder.box(Vector3(0.55, 1.6, 0.55)), STONE, chimney)
-	b.part(ToyBuilder.box(Vector3(0.65, 0.12, 0.65)), STONE.darkened(0.15), chimney + Vector3(0, 0.8, 0))
+	b.textured(ToyBuilder.box(Vector3(0.55, 1.6, 0.55)), "old_stone_wall", ToyBuilder.xf(chimney), 1.0)
+	b.textured(ToyBuilder.box(Vector3(0.65, 0.12, 0.65)), "old_stone_wall", ToyBuilder.xf(chimney + Vector3(0, 0.8, 0)), 1.0, Color("aaaaaa"))
 	b.fluff_blob(chimney + Vector3(0, 0.88, 0), Vector3(0.25, 0.04, 0.25), 0.08, SNOW, 8, seed + 3)
 	var smoke := CPUParticles3D.new()
 	smoke.amount = 24
@@ -206,7 +208,7 @@ static func log_cabin(seed := 1) -> Node3D:
 	# Front door with wreath
 	var front := 1.5 + log_r
 	b.part(ToyBuilder.box(Vector3(0.95, 1.55, 0.08)), LOG_DARK.darkened(0.2), Vector3(0, 1.07, front + 0.02))
-	b.part(ToyBuilder.box(Vector3(0.8, 1.42, 0.08)), Color("7a4524"), Vector3(0, 1.03, front + 0.06))
+	b.textured(ToyBuilder.box(Vector3(0.8, 1.42, 0.08)), "brown_planks_04", ToyBuilder.xf(Vector3(0, 1.03, front + 0.06), Vector3(0, 0, 90)), 1.0, Color("c88a5a"))
 	for k in 3:
 		b.part(ToyBuilder.box(Vector3(0.74, 0.03, 0.03)), LOG_DARK, Vector3(0, 0.55 + k * 0.45, front + 0.11))
 	b.part(ToyBuilder.sphere(0.04), GOLD, Vector3(0.28, 0.95, front + 0.12))
@@ -320,12 +322,12 @@ static func fence(length := 4.0) -> Node3D:
 	var posts := int(length / 0.5) + 1
 	for k in posts:
 		var x := k * 0.5 - length / 2.0
-		b.part(ToyBuilder.box(Vector3(0.1, 0.9, 0.08)), LOG, Vector3(x, 0.45, 0))
+		b.textured(ToyBuilder.box(Vector3(0.1, 0.9, 0.08)), "brown_planks_04", ToyBuilder.xf(Vector3(x, 0.45, 0)), 0.8)
 		b.part(ToyBuilder.cylinder(0.0, 0.07, 0.1, 4), LOG, Vector3(x, 0.95, 0), Vector3(0, 45, 0))
 		b.part(ToyBuilder.sphere(1.0, 8), SNOW, Vector3(x, 0.96, 0), Vector3.ZERO, Vector3(0.07, 0.05, 0.07))
 	for y in [0.3, 0.7]:
-		b.part(ToyBuilder.box(Vector3(length + 0.1, 0.08, 0.05)), LOG_DARK, Vector3(0, y, -0.06))
-		b.part(ToyBuilder.box(Vector3(length + 0.1, 0.04, 0.07)), SNOW, Vector3(0, y + 0.06, -0.06))
+		b.textured(ToyBuilder.box(Vector3(length + 0.1, 0.08, 0.05)), "brown_planks_04", ToyBuilder.xf(Vector3(0, y, -0.06)), 0.8, Color("9a7a60"))
+		b.textured(ToyBuilder.box(Vector3(length + 0.1, 0.04, 0.07)), "snow_02", ToyBuilder.xf(Vector3(0, y + 0.06, -0.06)), 1.0, SNOW_TINT)
 	var root := Node3D.new()
 	root.name = "Fence"
 	root.add_child(b.build(0.01, "Mesh"))
@@ -389,7 +391,7 @@ static func snow_ground(size := 120.0, resolution := 80, flat_radius := 7.0, see
 	var grid := ArrayMesh.new()
 	grid.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	var b := ToyBuilder.new()
-	b.add(grid, SNOW)
+	b.textured(grid, "snow_02", Transform3D.IDENTITY, 2.5, SNOW_TINT)
 	var root := Node3D.new()
 	root.name = "SnowGround"
 	root.add_child(b.build(0.0, "Mesh"))
