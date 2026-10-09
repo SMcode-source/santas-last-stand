@@ -2,10 +2,12 @@
 
 Usage:
     blender --background --factory-startup --python tools/blender/optimize_model.py -- \
-        <input.gltf|glb> <output.glb> <target_triangles> [max_texture_px=1024]
+        <input.gltf|glb> <output.glb> <target_triangles> [max_texture_px=1024] [base_color_px]
 
 Decimates every mesh by the same ratio (so a multi-part model keeps its balance),
-caps texture size and re-encodes textures as JPEG.
+caps texture size and re-encodes textures as JPEG. Base colour textures can keep
+a bigger cap than normal and roughness maps. Rigged models keep their skeleton,
+skin weights and animations.
 """
 import os
 import sys
@@ -21,6 +23,7 @@ def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1:]
     source, target_path, budget = args[0], args[1], int(args[2])
     max_px = int(args[3]) if len(args) > 3 else 1024
+    base_px = int(args[4]) if len(args) > 4 else max_px
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=source)
@@ -35,13 +38,22 @@ def main() -> None:
             mod.ratio = ratio
             mod.use_collapse_triangulate = True
             bpy.context.view_layer.objects.active = obj
+            # Decimate the rest pose, before any armature deformation.
+            bpy.ops.object.modifier_move_to_index(modifier=mod.name, index=0)
             bpy.ops.object.modifier_apply(modifier=mod.name)
     after = sum(triangles(o) for o in meshes)
 
+    base_colour = set()
+    for material in bpy.data.materials:
+        if material.node_tree:
+            for link in material.node_tree.links:
+                if link.to_socket.name == "Base Color" and link.from_node.type == "TEX_IMAGE":
+                    base_colour.add(link.from_node.image)
     for image in bpy.data.images:
         w, h = image.size
-        if max(w, h) > max_px:
-            scale = max_px / max(w, h)
+        cap = base_px if image in base_colour else max_px
+        if max(w, h) > cap:
+            scale = cap / max(w, h)
             image.scale(int(w * scale), int(h * scale))
 
     os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)

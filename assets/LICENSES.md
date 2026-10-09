@@ -38,7 +38,7 @@ Generated with Meshy (https://www.meshy.ai) on the free plan, which licenses its
 
 | File in `assets/characters/` | Notes |
 |---|---|
-| `santa.glb` | Santa. Image made with Nano Banana Pro inside Meshy, then turned to 3D with Meshy 6 Lite, textured, auto-rigged (Mixamo skeleton) and given Meshy's free animations: Walking, Running, Attack, Triple Combo Attack, BeHit FlyUp, Dead. Generated 2026-10-09. |
+| `santa.glb` | Santa. Image made with Nano Banana Pro inside Meshy, then turned to 3D with Meshy 6 Lite, textured, auto-rigged (Mixamo skeleton) and given Meshy's free animations: Walking, Running, Attack, Triple Combo Attack, BeHit FlyUp, Dead. Generated 2026-10-09; slimmed to 30k triangles with 1024 px normal and roughness maps (tools/blender/optimize_model.py). |
 
 ## Generated in-house
 - `textures/generated/fir_branch.png`: fir needle cards, drawn by `tools/make_textures.gd`. No third-party content.

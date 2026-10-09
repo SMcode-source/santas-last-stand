@@ -89,6 +89,7 @@ static func fir_tree(height: float, seed := 1, decorated := false, detail := 1.0
 		light.omni_range = height * 1.6
 		light.light_cull_mask = ~SELF_LIT_LAYER
 		light.position = Vector3(0, height * 0.55, height * 0.4)
+		light.add_to_group(GraphicsQuality.LIGHTS_ABOVE_LOW)
 		root.add_child(light)
 
 	var mesh_instance := b.build(0.0, "Mesh")
@@ -499,6 +500,7 @@ static func lamp_post() -> Node3D:
 	light.light_energy = 1.5
 	light.omni_range = 6.0
 	light.position = lantern
+	light.add_to_group(GraphicsQuality.LIGHTS_ABOVE_LOW)
 	root.add_child(light)
 	return root
 

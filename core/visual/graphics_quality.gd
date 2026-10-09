@@ -8,10 +8,18 @@ enum Level { LOW, MEDIUM, HIGH }
 
 ## Tallest 3D render (in pixels) per level. Browsers on high-DPI laptops can
 ## ask for 2-3x more pixels than this; the 3D is upscaled, the HUD stays sharp.
-const MAX_RENDER_HEIGHT := {Level.LOW: 540, Level.MEDIUM: 720, Level.HIGH: 1080}
+## Low saves its time elsewhere: below 720 the logs and roof edges turn into
+## visible stair-steps once stretched to the screen.
+const MAX_RENDER_HEIGHT := {Level.LOW: 720, Level.MEDIUM: 810, Level.HIGH: 1080}
+## Last resort when even Low runs under about 30 fps.
+const SQUEEZED_RENDER_HEIGHT := 576
+const VERY_SLOW_FRAME_MS := 33.0
 
 ## Nodes in this group cast shadows only at the High level.
 const SHADOWS_ON_HIGH := "shadows_on_high"
+## Decorative lights switched off at Low. The Compatibility renderer draws
+## everything an omni light touches once more, so each one is costly.
+const LIGHTS_ABOVE_LOW := "lights_above_low"
 
 ## Average frame time (ms) above which we drop a level: about 45 fps.
 const SLOW_FRAME_MS := 22.0
@@ -21,6 +29,7 @@ var level := Level.HIGH
 var _environment: Environment
 var _sun: DirectionalLight3D
 var _auto := true
+var _squeezed := false
 var _settle := 2.0
 var _elapsed := 0.0
 var _frames := 0
@@ -48,6 +57,7 @@ func _ready() -> void:
 
 
 func _read_setting() -> void:
+	_squeezed = false
 	var chosen: String = GameState.setting("quality")
 	_auto = chosen == "auto"
 	if _auto:
@@ -62,8 +72,12 @@ func _forced_on_command_line() -> bool:
 
 func apply() -> void:
 	_environment.ssao_enabled = level == Level.HIGH
-	_environment.glow_enabled = level != Level.LOW
+	# Glow stays on at every level: without it the windows and fairy lights look
+	# painted on, and it is cheap next to shadows.
+	_environment.glow_enabled = true
 	_sun.shadow_enabled = level != Level.LOW
+	for node in get_tree().get_nodes_in_group(LIGHTS_ABOVE_LOW):
+		(node as Light3D).visible = level != Level.LOW
 	# Real shadows from the background forest only on High; lower levels rely
 	# on the shading painted into the foliage shader.
 	var casting := GeometryInstance3D.SHADOW_CASTING_SETTING_ON if level == Level.HIGH \
@@ -72,7 +86,7 @@ func apply() -> void:
 		(node as GeometryInstance3D).cast_shadow = casting
 	_sun.directional_shadow_max_distance = 32.0 if level == Level.HIGH else 22.0
 	var viewport := get_viewport()
-	viewport.msaa_3d = Viewport.MSAA_DISABLED if level == Level.LOW else Viewport.MSAA_2X
+	viewport.msaa_3d = Viewport.MSAA_2X
 	_fit_resolution()
 	Engine.set_meta("graphics_quality", Level.keys()[level].capitalize())
 
@@ -80,11 +94,12 @@ func apply() -> void:
 func _fit_resolution() -> void:
 	# The window's real pixel height, not the stretched canvas size.
 	var height := float(get_window().size.y)
-	get_viewport().scaling_3d_scale = clampf(MAX_RENDER_HEIGHT[level] / maxf(height, 1.0), 0.25, 1.0)
+	var target: float = SQUEEZED_RENDER_HEIGHT if _squeezed else MAX_RENDER_HEIGHT[level]
+	get_viewport().scaling_3d_scale = clampf(target / maxf(height, 1.0), 0.25, 1.0)
 
 
 func _process(delta: float) -> void:
-	if not _auto or level == Level.LOW:
+	if not _auto or _squeezed:
 		return
 	_settle -= delta
 	if _settle > 0.0:
@@ -93,9 +108,13 @@ func _process(delta: float) -> void:
 	_frames += 1
 	if _elapsed < SAMPLE_SECONDS:
 		return
-	if _elapsed / _frames * 1000.0 > SLOW_FRAME_MS:
+	var frame_ms := _elapsed / _frames * 1000.0
+	if level > Level.LOW and frame_ms > SLOW_FRAME_MS:
 		level = (level - 1) as Level
 		apply()
 		_settle = 1.0
+	elif level == Level.LOW and frame_ms > VERY_SLOW_FRAME_MS:
+		_squeezed = true
+		_fit_resolution()
 	_elapsed = 0.0
 	_frames = 0
