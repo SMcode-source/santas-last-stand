@@ -95,3 +95,14 @@ func _ready() -> void:
 	if face:
 		camera.position = Vector3(0.25, 1.72, 0.85)
 		camera.look_at(Vector3(0, 1.6, 0))
+	# Optional close-up: --cam=x,y,z --look=x,y,z
+	var look := Vector3.INF
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--cam="):
+			var v := arg.get_slice("=", 1).split_floats(",")
+			camera.position = Vector3(v[0], v[1], v[2])
+		if arg.begins_with("--look="):
+			var v := arg.get_slice("=", 1).split_floats(",")
+			look = Vector3(v[0], v[1], v[2])
+	if look != Vector3.INF:
+		camera.look_at(look)

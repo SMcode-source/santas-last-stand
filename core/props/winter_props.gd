@@ -70,17 +70,47 @@ static func fir_tree(height: float, seed := 1, decorated := false, detail := 1.0
 	foliage.branch(Vector3(0, height * 0.9, 0), 0.0, -PI / 2.0 + 0.05, height * 0.12, true)
 
 	if decorated:
+		# Baubles hang on short threads from the branch tips: some mirror-bright
+		# metal, some glossy glass, each with a gold cap and hanging loop.
+		var bauble_r := height * 0.02
 		for i in range(0, tips.size(), 2):
-			b.part(ToyBuilder.sphere(height * 0.02, 12), BAUBLES[rng.randi() % BAUBLES.size()], tips[i] + Vector3(0, -height * 0.025, 0))
+			var drop: float = rng.randf_range(0.02, 0.04) * height
+			var at: Vector3 = tips[i] + Vector3(0, -drop - bauble_r, 0)
+			var colour: Color = BAUBLES[rng.randi() % BAUBLES.size()]
+			b.finished(ToyBuilder.sphere(bauble_r, 14), colour, "metal" if rng.randf() < 0.3 else "eye", ToyBuilder.xf(at))
+			b.finished(ToyBuilder.cylinder(bauble_r * 0.28, bauble_r * 0.3, bauble_r * 0.25, 8), GOLD, "metal",
+					ToyBuilder.xf(at + Vector3(0, bauble_r * 1.0, 0)))
+			b.finished(ToyBuilder.torus(bauble_r * 0.14, bauble_r * 0.04, 8, 4), GOLD, "metal",
+					ToyBuilder.xf(at + Vector3(0, bauble_r * 1.25, 0), Vector3(90, rng.randf() * 180.0, 0)))
+			b.add(ToyBuilder.cylinder(height * 0.0012, height * 0.0012, drop, 3), Color("c9a64a"),
+					ToyBuilder.xf(at + Vector3(0, bauble_r * 1.3 + drop / 2.0, 0)))
+		# Fairy lights strung on a dark wire.
 		var turns := 4.5
 		var steps := 60
-		for k in steps:
+		var wire := PackedVector3Array()
+		for k in steps + 1:
 			var t := float(k) / steps
 			var y := crown_base + t * height * 0.8
 			var radius := lerpf(height * 0.3, height * 0.05, t)
 			var angle := t * TAU * turns
-			b.part(ToyBuilder.sphere(height * 0.009, 8), FAIRY[k % FAIRY.size()],
-					Vector3(cos(angle) * radius, y, sin(angle) * radius), Vector3.ZERO, Vector3.ONE, true)
+			var point := Vector3(cos(angle) * radius, y, sin(angle) * radius)
+			wire.append(point * Vector3(0.97, 1, 0.97))
+			if k < steps:
+				b.part(ToyBuilder.sphere(height * 0.009, 8), FAIRY[k % FAIRY.size()], point, Vector3.ZERO, Vector3.ONE, true)
+		var thin := PackedFloat32Array()
+		for k in steps + 1:
+			thin.append(height * 0.0018)
+		b.add(ToyBuilder.tube(wire, thin, 4), Color("1f2a22"))
+		# A chain of gold beads swagged from branch to branch.
+		var beads := 220
+		var bead := ToyBuilder.sphere(height * 0.0045, 6)
+		for k in beads:
+			var t := float(k) / beads
+			var radius := lerpf(height * 0.31, height * 0.06, t)
+			var angle := t * TAU * 3.5 + PI
+			var swag := sin(fmod(t * 3.5 * 7.0, 1.0) * PI) * height * 0.03
+			var at := Vector3(cos(angle) * radius, crown_base + height * 0.05 + t * height * 0.75 - swag, sin(angle) * radius)
+			b.finished(bead, GOLD, "eye", ToyBuilder.xf(at))
 		b.part(ToyBuilder.star(5, height * 0.07, height * 0.03, height * 0.022), Color("ffd84a"),
 				Vector3(0, height * 1.0, 0), Vector3.ZERO, Vector3.ONE, true)
 		var light := OmniLight3D.new()
@@ -307,6 +337,10 @@ static func log_cabin(seed := 1) -> Node3D:
 	var log_r := 0.14
 	var rows := 7
 	var log_snow := 0.32
+	# Sawn log ends and the lit window panes need UVs, so they get their own surfaces.
+	var ends := MeshPieces.new()
+	var panes := MeshPieces.new()
+	var chinking := Color("b9b2a6")
 
 	b.textured(ToyBuilder.box(Vector3(4.4, 0.3, 3.4)), "old_stone_wall", ToyBuilder.xf(Vector3(0, 0.15, 0)), 1.2, Color.WHITE, 0.4)
 	# Walls: logs cross at the corners and stick out past them, as real notched logs do.
@@ -315,11 +349,23 @@ static func log_cabin(seed := 1) -> Node3D:
 		var tint := Color.WHITE if k % 2 == 0 else Color("d8d0c8")
 		for z in [-1.5, 1.5]:
 			var lean := rng.randf_range(-1.0, 1.0)
+			var shift := rng.randf_range(-0.05, 0.05)
 			b.textured(ToyBuilder.cylinder(log_r, log_r * 1.05, 4.6, 12), "wood_trunk_wall",
-					ToyBuilder.xf(Vector3(rng.randf_range(-0.05, 0.05), y, z), Vector3(lean, 0, 90)), 1.6, tint, log_snow)
+					ToyBuilder.xf(Vector3(shift, y, z), Vector3(lean, 0, 90)), 1.6, tint, log_snow)
+			for end: float in [-1.0, 1.0]:
+				var r := log_r * (1.05 if end < 0.0 else 1.0)
+				ends.disc(Vector3(shift + end * 2.302, y, z), Vector3(end, 0, 0), Vector3.UP, r, Color(rng.randf(), 0, 0))
+			# Mortar chinking packed into the groove above each log.
+			if k < rows - 1:
+				b.add(ToyBuilder.box(Vector3(3.9, 0.075, 0.17)), chinking, ToyBuilder.xf(Vector3(0, y + log_r * 0.95, z)))
 		for x in [-2.0, 2.0]:
+			var shift := rng.randf_range(-0.05, 0.05)
 			b.textured(ToyBuilder.cylinder(log_r * 1.05, log_r, 3.6, 12), "wood_trunk_wall",
-					ToyBuilder.xf(Vector3(x, y + log_r * 0.95, rng.randf_range(-0.05, 0.05)), Vector3(90, 0, 0)), 1.6, tint, log_snow)
+					ToyBuilder.xf(Vector3(x, y + log_r * 0.95, shift), Vector3(90, 0, 0)), 1.6, tint, log_snow)
+			for end: float in [-1.0, 1.0]:
+				ends.disc(Vector3(x, y + log_r * 0.95, shift + end * 1.802), Vector3(0, 0, end), Vector3.UP, log_r * 1.03, Color(rng.randf(), 0, 0))
+			if k < rows - 1:
+				b.add(ToyBuilder.box(Vector3(0.17, 0.075, 2.9)), chinking, ToyBuilder.xf(Vector3(x, y + log_r * 1.9, 0)))
 	var wall_top := 0.42 + rows * log_r * 1.9
 	# Gables on the side walls, stepping in under the roof slopes.
 	for k in 5:
@@ -327,6 +373,9 @@ static func log_cabin(seed := 1) -> Node3D:
 		for x in [-2.0, 2.0]:
 			b.textured(ToyBuilder.cylinder(log_r, log_r, length, 12), "wood_trunk_wall",
 					ToyBuilder.xf(Vector3(x, wall_top + k * log_r * 1.8, 0), Vector3(90, 0, 0)), 1.6, Color.WHITE, log_snow)
+			for end: float in [-1.0, 1.0]:
+				ends.disc(Vector3(x, wall_top + k * log_r * 1.8, end * (length / 2.0 + 0.002)), Vector3(0, 0, end), Vector3.UP,
+						log_r, Color(rng.randf(), 0, 0))
 
 	# Roof: plank slabs under a thick, soft blanket of snow that droops over the eaves.
 	var ridge := wall_top + 1.25
@@ -343,11 +392,21 @@ static func log_cabin(seed := 1) -> Node3D:
 		var sheet := ToyBuilder.snow_sheet(Vector2(4.9, slope_len - 0.1), 0.2, seed + int(side * 7))
 		b.textured(sheet, "snow_02", Transform3D(basis, centre + normal * 0.08), 1.5, SNOW_TINT)
 		var eave_pos := centre + basis * Vector3(0, 0, slope_len / 2.0 * side) + normal * 0.02
-		for k in 24:
-			if rng.randf() < 0.65:
-				var x := lerpf(-2.4, 2.4, k / 23.0)
-				var icicle := rng.randf_range(0.12, 0.45)
-				b.part(ToyBuilder.cylinder(0.025, 0.0, icicle, 6), ICE, eave_pos + Vector3(x, -icicle / 2.0 - 0.12, 0), Vector3(180, 0, 0))
+		# A soft, uneven lip of snow curling over the eave.
+		var lip := PackedVector3Array()
+		var lip_r := PackedFloat32Array()
+		for k in 25:
+			var x := lerpf(-2.5, 2.5, k / 24.0)
+			lip.append(eave_pos + Vector3(x, 0.03 + rng.randf_range(-0.015, 0.015), side * 0.02))
+			lip_r.append(rng.randf_range(0.07, 0.1) * (0.6 if k == 0 or k == 24 else 1.0))
+		b.textured(ToyBuilder.tube(lip, lip_r, 8), "snow_02", Transform3D.IDENTITY, 1.5, SNOW_TINT)
+		# Icicles: mostly short, a few long ones, thicker at the root.
+		for k in 34:
+			if rng.randf() < 0.7:
+				var x := lerpf(-2.4, 2.4, k / 33.0) + rng.randf_range(-0.03, 0.03)
+				var icicle := rng.randf_range(0.08, 0.3) if rng.randf() < 0.8 else rng.randf_range(0.32, 0.48)
+				var thick := 0.014 + icicle * 0.04
+				b.part(ToyBuilder.cylinder(thick, 0.0, icicle, 6), ICE, eave_pos + Vector3(x, -icicle / 2.0 - 0.1, side * 0.03), Vector3(180, 0, 0))
 		if side > 0.0:
 			for k in 20:
 				var x := lerpf(-2.35, 2.35, k / 19.0)
@@ -369,23 +428,51 @@ static func log_cabin(seed := 1) -> Node3D:
 	b.textured(ToyBuilder.box(Vector3(0.8, 1.42, 0.08)), "brown_planks_04", ToyBuilder.xf(Vector3(0, 1.03, front + 0.07)), 1.0, Color("c88a5a"))
 	for k in 3:
 		b.textured(ToyBuilder.box(Vector3(0.74, 0.05, 0.03)), "brown_planks_04", ToyBuilder.xf(Vector3(0, 0.55 + k * 0.45, front + 0.12)), 0.6, Color("7a5238"))
-	b.part(ToyBuilder.sphere(0.035), IRON, Vector3(0.28, 0.95, front + 0.13))
+	# Door frame, strap hinges with nail heads, and a ring pull on a back plate.
+	var trim := Color("5a4232")
+	for x in [-0.53, 0.53]:
+		b.textured(ToyBuilder.box(Vector3(0.1, 1.72, 0.07)), "wood_trunk_wall", ToyBuilder.xf(Vector3(x, 1.1, front + 0.08)), 0.6, trim)
+	b.textured(ToyBuilder.box(Vector3(1.22, 0.12, 0.09)), "wood_trunk_wall", ToyBuilder.xf(Vector3(0, 1.97, front + 0.08)), 0.6, trim, 0.6)
+	var hinge := Color("2a2522")
+	for hy in [0.62, 1.48]:
+		b.finished(ToyBuilder.box(Vector3(0.5, 0.045, 0.012)), hinge, "metal", ToyBuilder.xf(Vector3(-0.15, hy, front + 0.117)))
+		b.finished(ToyBuilder.sphere(0.03, 10), hinge, "metal", ToyBuilder.xf(Vector3(0.1, hy, front + 0.117), Vector3.ZERO, Vector3(1, 1, 0.4)))
+		for n in 4:
+			b.finished(ToyBuilder.sphere(0.009, 6), hinge.darkened(0.3), "metal", ToyBuilder.xf(Vector3(-0.36 + n * 0.13, hy, front + 0.124)))
+	b.finished(ToyBuilder.box(Vector3(0.08, 0.13, 0.01)), hinge, "metal", ToyBuilder.xf(Vector3(0.28, 0.98, front + 0.115)))
+	b.finished(ToyBuilder.torus(0.04, 0.008, 14, 6), Color("3a3330"), "metal", ToyBuilder.xf(Vector3(0.28, 0.92, front + 0.128), Vector3(90, 0, 0)))
 	var wreath := Vector3(0, 1.42, front + 0.14)
 	b.add(ToyBuilder.lumpy(ToyBuilder.torus(0.2, 0.07, 24, 10), 0.03, 14.0, seed), PINE.darkened(0.3), ToyBuilder.xf(wreath, Vector3(90, 0, 0)))
 	for k in 9:
 		var a := TAU * k / 9.0 + 0.3
 		b.part(ToyBuilder.sphere(0.025), BERRY, wreath + Vector3(cos(a) * 0.21, sin(a) * 0.21, 0.07))
-	b.part(ToyBuilder.torus(0.06, 0.022, 12, 6), BERRY, wreath + Vector3(-0.07, -0.2, 0.08), Vector3(90, 0, 30))
-	b.part(ToyBuilder.torus(0.06, 0.022, 12, 6), BERRY, wreath + Vector3(0.07, -0.2, 0.08), Vector3(90, 0, -30))
+	for sx: float in [-1.0, 1.0]:
+		b.finished(ToyBuilder.torus(0.045, 0.016, 14, 6), BERRY, "velvet",
+				ToyBuilder.xf(wreath + Vector3(sx * 0.06, -0.2, 0.08), Vector3(90, 0, 0), Vector3(1.5, 1, 0.75)))
+		b.finished(ToyBuilder.box(Vector3(0.035, 0.16, 0.008)), BERRY, "velvet",
+				ToyBuilder.xf(wreath + Vector3(sx * 0.03, -0.29, 0.085), Vector3(0, 0, sx * 14)))
+	b.finished(ToyBuilder.sphere(0.024, 10), BERRY.darkened(0.1), "velvet", ToyBuilder.xf(wreath + Vector3(0, -0.2, 0.09), Vector3.ZERO, Vector3(1, 1.1, 0.7)))
 	b.textured(ToyBuilder.box(Vector3(1.3, 0.12, 0.5)), "old_stone_wall", ToyBuilder.xf(Vector3(0, 0.06, front + 0.3)), 0.8, Color.WHITE, 0.5)
 
 	# Windows: timber frames, warm glass with crossbars, and sills that catch snow
 	for x in [-1.25, 1.25]:
 		var w := Vector3(x, 1.25, front + 0.02)
 		b.textured(ToyBuilder.box(Vector3(0.82, 0.72, 0.08)), "wood_trunk_wall", ToyBuilder.xf(w), 0.6, Color("6b5040"))
-		b.part(ToyBuilder.box(Vector3(0.64, 0.54, 0.05)), WARM_LIGHT, w + Vector3(0, 0, 0.03), Vector3.ZERO, Vector3.ONE, true)
-		b.part(ToyBuilder.box(Vector3(0.04, 0.56, 0.05)), LOG_DARK.darkened(0.3), w + Vector3(0, 0, 0.06))
-		b.part(ToyBuilder.box(Vector3(0.66, 0.04, 0.05)), LOG_DARK.darkened(0.3), w + Vector3(0, 0, 0.06))
+		panes.rect(w + Vector3(0, 0, 0.042), Vector3.BACK, Vector3.UP, Vector2(0.64, 0.54))
+		# Casing round the glass, standing proud of the wall.
+		for e: Array in [[Vector3(0, 0.3, 0), Vector3(0.74, 0.06, 0.06)], [Vector3(0, -0.3, 0), Vector3(0.74, 0.06, 0.06)],
+				[Vector3(-0.34, 0, 0), Vector3(0.06, 0.66, 0.06)], [Vector3(0.34, 0, 0), Vector3(0.06, 0.66, 0.06)]]:
+			b.textured(ToyBuilder.box(e[1]), "wood_trunk_wall", ToyBuilder.xf(w + (e[0] as Vector3) + Vector3(0, 0, 0.06)), 0.6, Color("5a4232"))
+		b.part(ToyBuilder.box(Vector3(0.035, 0.56, 0.04)), LOG_DARK.darkened(0.3), w + Vector3(0, 0, 0.065))
+		b.part(ToyBuilder.box(Vector3(0.66, 0.035, 0.04)), LOG_DARK.darkened(0.3), w + Vector3(0, 0, 0.065))
+		# Painted plank shutters, folded back against the logs.
+		for sx: float in [-1.0, 1.0]:
+			var shutter := w + Vector3(sx * 0.6, 0, 0.03)
+			for plank in 3:
+				b.textured(ToyBuilder.box(Vector3(0.105, 0.74, 0.04)), "brown_planks_04",
+						ToyBuilder.xf(shutter + Vector3((plank - 1) * 0.11, 0, 0)), 0.5, Color("4d7a58"))
+			for by in [0.24, -0.24]:
+				b.textured(ToyBuilder.box(Vector3(0.32, 0.06, 0.02)), "brown_planks_04", ToyBuilder.xf(shutter + Vector3(0, by, 0.028)), 0.5, Color("3f6b4a"))
 		b.textured(ToyBuilder.box(Vector3(0.95, 0.07, 0.22)), "brown_planks_04", ToyBuilder.xf(w + Vector3(0, -0.4, 0.09)), 0.6, Color("9a7058"), 0.6)
 		b.textured(ToyBuilder.snow_sheet(Vector2(0.9, 0.18), 0.05, seed + int(x * 10), 0.04), "snow_02",
 				ToyBuilder.xf(w + Vector3(0, -0.36, 0.09)), 1.5, SNOW_TINT)
@@ -394,8 +481,10 @@ static func log_cabin(seed := 1) -> Node3D:
 	for row_i in 5:
 		for k in 7 - row_i % 2:
 			var pos := Vector3(2.45, 0.12 + row_i * 0.2, -1.05 + k * 0.3 + (row_i % 2) * 0.15)
+			var nudge := rng.randf_range(-0.04, 0.04)
 			b.textured(ToyBuilder.cylinder(0.1, 0.1, 0.6, 9), "bark_brown_02",
-					ToyBuilder.xf(pos + Vector3(rng.randf_range(-0.04, 0.04), 0, 0), Vector3(0, 0, 90)), 0.5, Color.WHITE, 0.45)
+					ToyBuilder.xf(pos + Vector3(nudge, 0, 0), Vector3(0, 0, 90)), 0.5, Color.WHITE, 0.45)
+			ends.disc(pos + Vector3(nudge + 0.302, 0, 0), Vector3.RIGHT, Vector3.UP, 0.1, Color(rng.randf(), 0, 0), 10)
 	b.textured(ToyBuilder.snow_sheet(Vector2(0.6, 2.0), 0.08, seed + 9, 0.06), "snow_02", ToyBuilder.xf(Vector3(2.45, 1.05, -0.1)), 1.5, SNOW_TINT)
 
 	# One warm light spilling out of both windows
@@ -415,13 +504,37 @@ static func log_cabin(seed := 1) -> Node3D:
 		b.textured(drift, "snow_02", ToyBuilder.xf(Vector3(dx, 0.0, front + 0.2),
 				Vector3(0, rng.randf_range(0, 360), 0), Vector3(rng.randf_range(0.4, 0.7), 0.22, 0.3)), 1.5, SNOW_TINT)
 
-	root.add_child(b.build(0.0, "Mesh"))
+	var cabin_mesh := b.build(0.0, "Mesh")
+	ends.add_to(cabin_mesh.mesh, end_grain_material())
+	panes.add_to(cabin_mesh.mesh, window_material())
+	root.add_child(cabin_mesh)
 
 	var lantern := PbrLibrary.model("wooden_lantern_01", 0.0)
 	lantern.position = Vector3(0.7, 1.55, front + 0.16)
 	lantern.scale = Vector3.ONE * 0.9
 	root.add_child(lantern)
 	return root
+
+
+## Sawn log ends: rings, cracks and a bark rim. COLOR.r seeds each log.
+static func end_grain_material() -> ShaderMaterial:
+	if not _cache.has("end_grain"):
+		var mat := ShaderMaterial.new()
+		mat.shader = preload("res://core/visual/end_grain.gdshader")
+		mat.set_shader_parameter("noise_tex", CharacterFinish.noise())
+		_cache["end_grain"] = mat
+	return _cache["end_grain"]
+
+
+## Lit window panes with curtains, a pelmet and frost round the edges.
+static func window_material() -> ShaderMaterial:
+	if not _cache.has("window"):
+		var mat := ShaderMaterial.new()
+		mat.shader = preload("res://core/visual/window_glass.gdshader")
+		mat.set_shader_parameter("noise_tex", CharacterFinish.noise())
+		mat.set_shader_parameter("cell_tex", CharacterFinish.cells())
+		_cache["window"] = mat
+	return _cache["window"]
 
 
 static func _chimney_smoke(at: Vector3) -> CPUParticles3D:

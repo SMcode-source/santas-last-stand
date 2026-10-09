@@ -25,9 +25,9 @@ static func build(size: Vector3, paper: Color, ribbon: Color, pattern := -1, see
 		pattern = absi(hash(paper.to_html())) % Pattern.PLAIN
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed
-	var paper_surface := _Surface.new()
-	var ribbon_surface := _Surface.new()
-	var tag_surface := _Surface.new()
+	var paper_surface := MeshPieces.new()
+	var ribbon_surface := MeshPieces.new()
+	var tag_surface := MeshPieces.new()
 
 	var radius := clampf(minf(size.x, size.z) * 0.025, 0.004, 0.012)
 	var lid_height := clampf(size.y * 0.22, 0.05, 0.12)
@@ -100,7 +100,7 @@ static func ribbon_material(color: Color) -> ShaderMaterial:
 # --- Shapes ------------------------------------------------------------------
 
 ## A box with rounded edges and corners.
-static func _rounded_box(s: _Surface, centre: Vector3, size: Vector3, radius: float, segs := 3) -> void:
+static func _rounded_box(s: MeshPieces, centre: Vector3, size: Vector3, radius: float, segs := 3) -> void:
 	var half := size / 2.0
 	var inner := half - Vector3.ONE * radius
 	for axis in 3:
@@ -139,7 +139,7 @@ static func _ticks(half: float, radius: float, segs: int) -> PackedFloat32Array:
 
 ## A ribbon band hugging a rounded box all the way round. Its width runs along
 ## `width_axis`.
-static func _band_around(s: _Surface, centre: Vector3, size: Vector3, radius: float,
+static func _band_around(s: MeshPieces, centre: Vector3, size: Vector3, radius: float,
 		width_axis: int, width: float, lift: float, segs := 3) -> void:
 	var a_axis := (width_axis + 1) % 3
 	var b_axis := (width_axis + 2) % 3
@@ -177,7 +177,7 @@ static func _band_around(s: _Surface, centre: Vector3, size: Vector3, radius: fl
 
 ## A flat strip of ribbon along `points`, `side` giving its width direction.
 ## `notch` cuts a V into the far end, as ribbon ends are trimmed.
-static func _strip(s: _Surface, points: PackedVector3Array, sides: PackedVector3Array,
+static func _strip(s: MeshPieces, points: PackedVector3Array, sides: PackedVector3Array,
 		widths: PackedFloat32Array, notch := 0.0) -> void:
 	var base := s.verts.size()
 	var travelled := 0.0
@@ -201,7 +201,7 @@ static func _strip(s: _Surface, points: PackedVector3Array, sides: PackedVector3
 
 ## A full rosette bow: an outer ring of loops lying low, an inner ring standing
 ## up, two notched tails and a knot in the middle.
-static func _bow(s: _Surface, top: Vector3, width: float, box_width: float, rng: RandomNumberGenerator) -> void:
+static func _bow(s: MeshPieces, top: Vector3, width: float, box_width: float, rng: RandomNumberGenerator) -> void:
 	var knot_height := width * 0.8
 	var knot := top + Vector3(0, knot_height * 0.45, 0)
 	var big := clampf(box_width * 0.27, 0.06, 0.15)
@@ -223,7 +223,7 @@ static func _bow(s: _Surface, top: Vector3, width: float, box_width: float, rng:
 
 ## One bow loop: out from the knot at `yaw`, rising at `elevation`, up and
 ## over and back, pinched where it is gathered into the knot.
-static func _loop(s: _Surface, knot: Vector3, yaw: float, elevation: float, length: float, height: float, width: float) -> void:
+static func _loop(s: MeshPieces, knot: Vector3, yaw: float, elevation: float, length: float, height: float, width: float) -> void:
 	var flat := Vector3(cos(yaw), 0, sin(yaw))
 	var dir := flat * cos(elevation) + Vector3.UP * sin(elevation)
 	var lift := flat * -sin(elevation) + Vector3.UP * cos(elevation)
@@ -245,7 +245,7 @@ static func _loop(s: _Surface, knot: Vector3, yaw: float, elevation: float, leng
 
 
 ## A ribbon tail falling from the knot onto the lid, ending in a V notch.
-static func _tail(s: _Surface, knot: Vector3, top_y: float, dir: Vector3, length: float, width: float) -> void:
+static func _tail(s: MeshPieces, knot: Vector3, top_y: float, dir: Vector3, length: float, width: float) -> void:
 	var side := dir.cross(Vector3.UP).normalized()
 	var points := PackedVector3Array()
 	var sides := PackedVector3Array()
@@ -263,7 +263,7 @@ static func _tail(s: _Surface, knot: Vector3, top_y: float, dir: Vector3, length
 
 
 ## A kraft-paper gift tag lying on the lid, tied to the bow with a thin cord.
-static func _tag(tag: _Surface, cord: _Surface, size: Vector3, width: float, rng: RandomNumberGenerator) -> void:
+static func _tag(tag: MeshPieces, cord: MeshPieces, size: Vector3, width: float, rng: RandomNumberGenerator) -> void:
 	var corner := Vector3(size.x * 0.27 * (1.0 if rng.randf() < 0.5 else -1.0), size.y + 0.004, size.z * 0.24)
 	var tag_size := Vector3(0.06, 0.0015, 0.038)
 	var turn := rng.randf_range(-0.6, 0.6)
@@ -286,41 +286,3 @@ static func _tag(tag: _Surface, cord: _Surface, size: Vector3, width: float, rng
 		widths.append(0.003)
 	_strip(cord, points, sides, widths)
 
-
-class _Surface:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	var indices := PackedInt32Array()
-
-	func vertex(pos: Vector3, normal: Vector3, uv: Vector2) -> int:
-		verts.append(pos)
-		normals.append(normal)
-		uvs.append(uv)
-		return verts.size() - 1
-
-	## Corners a, b, c, d in order round the quad.
-	func quad(a: int, b: int, c: int, d: int) -> void:
-		tri(a, b, c)
-		tri(a, c, d)
-
-	## Wound so the triangle faces along its vertex normals.
-	func tri(i0: int, i1: int, i2: int) -> void:
-		var face := (verts[i1] - verts[i0]).cross(verts[i2] - verts[i0])
-		var facing := face.dot(normals[i0] + normals[i1] + normals[i2])
-		if facing * ToyBuilder._engine_front_sign() < 0.0:
-			indices.append_array([i0, i2, i1])
-		else:
-			indices.append_array([i0, i1, i2])
-
-	func add_to(mesh: ArrayMesh, material: Material) -> void:
-		if verts.is_empty():
-			return
-		var arrays := []
-		arrays.resize(Mesh.ARRAY_MAX)
-		arrays[Mesh.ARRAY_VERTEX] = verts
-		arrays[Mesh.ARRAY_NORMAL] = normals
-		arrays[Mesh.ARRAY_TEX_UV] = uvs
-		arrays[Mesh.ARRAY_INDEX] = indices
-		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		mesh.surface_set_material(mesh.get_surface_count() - 1, material)
