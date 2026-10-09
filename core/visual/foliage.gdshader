@@ -8,15 +8,25 @@ uniform vec3 needle_tint : source_color = vec3(1.0);
 uniform float snow_amount : hint_range(0.0, 1.0) = 0.5;
 uniform sampler2D snow_albedo : source_color, filter_linear_mipmap, repeat_enable;
 uniform float wind = 0.04;
+// Painted-in shadow for trees that cast no real shadows: the side facing
+// away from the moon and the lower branches under the upper tiers are shaded.
+uniform float self_shadow : hint_range(0.0, 1.0) = 1.0;
+// Direction towards the moon, and the tree's height in its own space.
+uniform vec3 light_towards = vec3(-0.42, 0.7, 0.56);
+uniform float crown_height = 5.0;
 
 varying vec3 world_pos;
 varying vec3 world_normal;
+varying vec3 tree_origin;
 varying float variation;
+varying float height_frac;
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_normal = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	vec3 origin = MODEL_MATRIX[3].xyz;
+	tree_origin = origin;
+	height_frac = clamp(VERTEX.y / crown_height, 0.0, 1.0);
 	variation = fract(sin(dot(origin.xz, vec2(12.9898, 78.233))) * 43758.5453);
 	// Branch tips (UV.x near 1) sway more than where they join the trunk.
 	float sway = sin(TIME * 1.3 + world_pos.x * 0.5 + world_pos.z * 0.35) * wind * UV.x * UV.x;
@@ -42,6 +52,11 @@ void fragment() {
 	float threshold = 1.0 - snow_amount;
 	float mask = smoothstep(threshold, threshold + 0.15, up) * step(0.001, snow_amount);
 	ALBEDO = mix(col, vec3(0.86, 0.9, 0.97), mask);
+	vec2 radial = world_pos.xz - tree_origin.xz;
+	float facing = dot(radial / max(length(radial), 0.001), normalize(light_towards.xz));
+	float lit_side = mix(0.55, 1.0, smoothstep(-0.5, 0.6, facing));
+	float under_tiers = mix(0.6, 1.0, smoothstep(0.05, 0.8, height_frac));
+	ALBEDO *= mix(1.0, lit_side * under_tiers, self_shadow);
 	// Mipmaps average the cut-out alpha down, so distant trees would lose
 	// their needles. Boost alpha with the mip level to keep them full.
 	vec2 texels = UV * vec2(textureSize(branch_tex, 0));

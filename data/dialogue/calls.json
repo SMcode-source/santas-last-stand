@@ -1,0 +1,8 @@
+{
+	"prologue": [
+		{"who": "president", "text": "Santa! Me again. Great meeting. One of the best meetings I've ever had."},
+		{"who": "president", "text": "Just out of curiosity... where do you keep the List?"},
+		{"who": "santa", "text": "...Why?"},
+		{"who": "president", "text": "Asking for a friend."}
+	]
+}

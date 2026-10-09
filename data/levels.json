@@ -1,0 +1,59 @@
+[
+	{
+		"id": "prologue", "day": 1, "date": "1 December", "title": "The Summons", "genre": "Story",
+		"difficulty": 0, "minutes": 4, "scene": "res://levels/00_prologue/prologue.tscn",
+		"call": "calls/prologue", "stinger": "", "collectibles": false,
+		"recap": "The President summoned Santa to Washington and handed him a gold dossier on the villains stealing Christmas.",
+		"checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l1", "day": 2, "date": "2 December", "title": "The Frozen Workshop", "genre": "3D platformer",
+		"difficulty": 2, "minutes": 13, "finale": "Boss fight", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": ["workshop", "clock_tower", "boss"], "hints": {}
+	},
+	{
+		"id": "l2", "day": 5, "date": "5 December", "title": "Krampusnacht", "genre": "Brawler",
+		"difficulty": 3, "minutes": 13, "finale": "Boss fight", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l3", "day": 9, "date": "9 December", "title": "The Paper Monopoly", "genre": "Strategy",
+		"difficulty": 4, "minutes": 13, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l4", "day": 12, "date": "12 December", "title": "The Yule Cat Prowls", "genre": "Stealth",
+		"difficulty": 5, "minutes": 12, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l5", "day": 16, "date": "16 December", "title": "The Holiday Grand Prix", "genre": "Sleigh racing",
+		"difficulty": 6, "minutes": 12, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l6", "day": 19, "date": "19 December", "title": "The Coal Mines", "genre": "Turn-based RPG",
+		"difficulty": 7, "minutes": 18, "finale": "Boss fight", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l7", "day": 22, "date": "22 December", "title": "The Paper Trail", "genre": "Detective",
+		"difficulty": 6, "minutes": 10, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l8", "day": 23, "date": "23 December", "title": "Operation Gingerbread", "genre": "Snowball shooter",
+		"difficulty": 8, "minutes": 12, "finale": "Boss fight", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l9", "day": 24, "date": "Christmas Eve", "title": "The Final Flight", "genre": "Sleigh flight",
+		"difficulty": 9, "minutes": 11, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	},
+	{
+		"id": "l10", "day": 25, "date": "Midnight", "title": "The Reckoning", "genre": "Debate, shooter, climb",
+		"difficulty": 10, "minutes": 15, "finale": "Final boss", "scene": "", "call": "", "stinger": "",
+		"recap": "", "checkpoints": [], "hints": {}
+	}
+]

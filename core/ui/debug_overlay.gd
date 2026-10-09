@@ -1,6 +1,7 @@
 class_name DebugOverlay
 extends CanvasLayer
-## F3 toggles a small performance readout: FPS, frame time, draw calls and triangles.
+## F3 toggles a small readout: FPS, frame time, draw calls and triangles, plus
+## the chapter's play time and failures per section while a chapter is running.
 ## Running with `-- --bench` prints the average frame time after a few seconds and quits.
 ## Add `--hide=Name1,Name2` to hide matching nodes (or `--hide=lights`) and see what they cost.
 
@@ -47,6 +48,10 @@ func _process(_delta: float) -> void:
 			_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
 			_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME) / 1000,
 		]
+		var level := get_tree().current_scene as LevelBase
+		if level:
+			_label.text += "
+" + level.debug_text()
 	if _bench:
 		_bench_step()
 
@@ -73,7 +78,7 @@ func _bench_step() -> void:
 
 
 func _hide(names: PackedStringArray) -> void:
-	for node in get_parent().find_children("*", "", true, false):
+	for node in get_tree().current_scene.find_children("*", "", true, false):
 		for n in names:
 			var match_lights: bool = n == "lights" and node is OmniLight3D
 			if (match_lights or node.name.contains(n)) and "visible" in node:

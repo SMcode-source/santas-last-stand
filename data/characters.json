@@ -1,0 +1,10 @@
+{
+	"_note": "Display names, name colours and voice-blip pitch. Renaming a character here renames them everywhere.",
+	"santa": {"name": "Santa", "color": "#ff6b6b", "pitch": 0.72},
+	"holly": {"name": "Mrs. Claus", "color": "#7fd99a", "pitch": 1.2},
+	"pepper": {"name": "Pepper", "color": "#ffab5e", "pitch": 1.55},
+	"blitzen": {"name": "Blitzen", "color": "#c9a27e", "pitch": 0.6},
+	"jingles": {"name": "Jingles", "color": "#e8cf8a", "pitch": 1.05},
+	"president": {"name": "The President", "color": "#ffd86b", "pitch": 0.9},
+	"brick": {"name": "Agent Brick", "color": "#9aa5b1", "pitch": 0.5}
+}

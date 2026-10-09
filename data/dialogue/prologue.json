@@ -1,0 +1,57 @@
+{
+	"summons": [
+		{"cue": "workshop"},
+		{"caption": "The North Pole  ·  1 December  ·  3:00 a.m."},
+		{"who": "santa", "text": "Amara Okafor, Lagos... nice. Tomasz Wierzbicki, Kraków... nice. Mostly."},
+		{"who": "santa", "text": "*He turns the page. The Naughty List goes on, and on.*"},
+		{"who": "holly", "text": "Nick. It's three in the morning."},
+		{"who": "santa", "text": "The List doesn't read itself, Holly."},
+		{"who": "holly", "text": "When did you last take a day off?"},
+		{"choice": [
+			{"text": "Sixteen-ninety-something. Lovely Tuesday, as I recall.", "tone": "jolly", "then": [
+				{"who": "holly", "text": "That was a joke. Please tell me that was a joke."}
+			]},
+			{"text": "Christmas doesn't take days off. Neither do I.", "tone": "stern", "then": [
+				{"who": "holly", "text": "Christmas has four hundred elves, Nick. You're allowed to use them."}
+			]},
+			{"text": "I'll take one when the world stops needing a List.", "tone": "sardonic", "then": [
+				{"who": "holly", "text": "So, never. Wonderful."}
+			]}
+		]},
+		{"caption": "Somewhere in the workshop, a telephone rings."},
+		{"who": "holly", "text": "...We don't have a telephone."},
+		{"who": "jingles", "text": "Sir! It's on your desk, sir. It's gold. I have never seen it before in my life."},
+		{"who": "santa", "text": "*He lifts the receiver.* Hello?"},
+		{"who": "president", "text": "Santa! Big fan. Huge fan. Probably the biggest fan you've ever had. I need you in Washington. Tonight."},
+		{"cue": "office"},
+		{"caption": "The Oval Office  ·  Washington, D.C."},
+		{"who": "president", "text": "Christmas is being stolen. Tremendous theft. The biggest theft, maybe ever."},
+		{"who": "president", "text": "You're the only one who can fix it. Well, you and me. But mostly you."},
+		{"choice": [
+			{"text": "Then let's save it together, Mr. President. What do you know?", "tone": "jolly", "then": [
+				{"who": "president", "text": "I love the energy. Love it. Very few people have that energy."}
+			]},
+			{"text": "Stolen by whom? I'll need names.", "tone": "stern", "then": [
+				{"who": "president", "text": "Names. Tough. I like it. We have names, believe me."}
+			]},
+			{"text": "You flew me four thousand miles to tell me something I'd already noticed?", "tone": "sardonic", "then": [
+				{"who": "president", "text": "Funny. You're a funny guy. People don't say that about you, but you are."}
+			]}
+		]},
+		{"caption": "He slides a gold folder across the desk. It is stamped DOSSIER, and it is very thick."},
+		{"who": "santa", "text": "Jack Frost... Krampus... Ebenezer Scrooge? These files are remarkably detailed."},
+		{"who": "santa", "text": "Where does a government find this sort of thing in a single night?"},
+		{"who": "president", "text": "We have people. The best people. Don't worry about it."},
+		{"choice": [
+			{"text": "Everyone on that list still deserves a Christmas. I'll bring it back.", "tone": "jolly"},
+			{"text": "If they're on the Naughty List, they'll answer for it.", "tone": "stern"},
+			{"text": "Fine. But don't expect anything extra in your stocking.", "tone": "sardonic"}
+		]},
+		{"by_tone": {
+			"jolly": {"who": "president", "text": "Beautiful. That's what I said. Everybody's saying it now. Go get 'em."},
+			"stern": {"who": "president", "text": "Tough on crime. Very strong. I've always said that. Go get 'em."},
+			"sardonic": {"who": "president", "text": "Ha! Nobody gets more in their stocking than me. Nobody. Go get 'em."}
+		}},
+		{"caption": "Santa tucks the dossier under his arm, and the long night begins."}
+	]
+}

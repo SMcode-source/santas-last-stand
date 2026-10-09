@@ -50,6 +50,9 @@ jobs:
       - name: Import project
         run: ~/godot/godot --headless --import
 
+      - name: Run unit tests
+        run: ~/godot/godot --headless --script res://tests/run_tests.gd
+
       - name: Export web build
         run: |
           mkdir -p build/web

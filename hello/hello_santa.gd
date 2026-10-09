@@ -1,11 +1,16 @@
 extends Node3D
-## M0 "Hello Santa" scene: proves the web build and hosting pipeline, and
-## previews the art direction. Click or press any key to make Santa hop and wave.
+## The winter camp outside Santa's cabin. On its own it is the M0 "Hello Santa"
+## scene (click or press any key to make Santa hop and wave); the title screen,
+## Advent calendar and Prologue use it as a backdrop with `show_ui` off.
 
 const SKY_SHADER := preload("res://core/visual/night_sky.gdshader")
 
-var _santa: SantaToy
-var _camera: Camera3D
+## The title text, the hint line and click-to-wave.
+var show_ui := true
+## The slow camera orbit around Santa. Turn off to move the camera yourself.
+var orbit_camera := true
+var santa: SantaModel
+var camera: Camera3D
 var _time := 0.0
 
 
@@ -13,8 +18,8 @@ func _ready() -> void:
 	var start := Time.get_ticks_msec()
 	_build_environment()
 	_build_scene()
-	_build_ui()
-	add_child(DebugOverlay.new())
+	if show_ui:
+		_build_ui()
 	Engine.set_meta("startup_ms", Time.get_ticks_msec() - start)
 
 
@@ -60,17 +65,17 @@ func _build_environment() -> void:
 
 	add_child(GraphicsQuality.new(env, moon))
 
-	_camera = Camera3D.new()
-	_camera.fov = 45
-	add_child(_camera)
+	camera = Camera3D.new()
+	camera.fov = 45
+	add_child(camera)
 	_update_camera()
 
 
 func _build_scene() -> void:
 	add_child(WinterProps.snow_ground())
 
-	_santa = SantaToy.new()
-	add_child(_santa)
+	santa = SantaModel.new()
+	add_child(santa)
 
 	_place(WinterProps.log_cabin(), Vector3(-4.2, 0, -5.5), 22)
 	_place(WinterProps.fir_tree(4.2, 7, true, 0.85), Vector3(3.6, 0, -3.8))
@@ -124,7 +129,9 @@ func _build_scene() -> void:
 		tree.free()
 		var forest_part := WinterProps.scatter(mesh, placements[v], false)
 		forest_part.name = "Forest%d" % v
+		forest_part.add_to_group(GraphicsQuality.SHADOWS_ON_HIGH)
 		add_child(forest_part)
+	add_child(_tree_shadows(placements, VARIANT_HEIGHT))
 	add_child(WinterProps.mountain_range())
 
 	# Falling snow
@@ -153,6 +160,31 @@ func _build_scene() -> void:
 	flake.material = flake_mat
 	snow.mesh = flake
 	add_child(snow)
+
+
+## Soft shadows on the snow under the background trees, cast away from the
+## moon, so the forest sits on the ground even where it casts no real shadows.
+func _tree_shadows(placements: Array[Array], tree_height: float) -> MultiMeshInstance3D:
+	var quad := QuadMesh.new()
+	quad.size = Vector2.ONE
+	quad.orientation = PlaneMesh.FACE_Y
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_texture = WinterProps.soft_dot()
+	mat.albedo_color = Color(0.05, 0.07, 0.16, 0.5)
+	mat.render_priority = -1
+	quad.material = mat
+	var away := Vector3(0.42, 0, -0.56).normalized()
+	var transforms: Array[Transform3D] = []
+	for group: Array in placements:
+		for t: Transform3D in group:
+			var size := t.basis.get_scale().x * tree_height
+			var spot := Basis.from_scale(Vector3(size * 0.75, 1, size * 1.1)).rotated(Vector3.UP, atan2(away.x, away.z))
+			transforms.append(Transform3D(spot, t.origin + away * size * 0.18 + Vector3(0, 0.03, 0)))
+	var shadows := WinterProps.scatter(quad, transforms, false)
+	shadows.name = "ForestGroundShadows"
+	return shadows
 
 
 func _place(node: Node3D, pos: Vector3, yaw_deg := 0.0) -> void:
@@ -190,19 +222,22 @@ func _build_ui() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
-	_update_camera()
+	if orbit_camera:
+		_update_camera()
 
 
 func _update_camera() -> void:
 	# Slow, gentle orbit around Santa.
 	var angle := sin(_time * 0.15) * 0.35
-	_camera.position = Vector3(sin(angle) * 3.7, 1.55, cos(angle) * 3.7)
-	_camera.look_at(Vector3(0, 1.12, 0))
+	camera.position = Vector3(sin(angle) * 3.7, 1.55, cos(angle) * 3.7)
+	camera.look_at(Vector3(0, 1.12, 0))
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not show_ui:
+		return
 	var pressed_key: bool = event is InputEventKey and event.pressed and not event.echo
 	var clicked: bool = event is InputEventMouseButton and event.pressed
 	if pressed_key or clicked:
-		_santa.hop()
-		_santa.wave()
+		santa.hop()
+		santa.wave()

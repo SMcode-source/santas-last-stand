@@ -8,8 +8,15 @@ config_version=5
 
 config/name="Santa's Last Stand"
 config/description="Santa must save Christmas from a conspiracy of his greatest enemies."
-run/main_scene="res://hello/hello_santa.tscn"
+run/main_scene="res://ui/title/title_screen.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[autoload]
+
+GameState="*res://autoload/game_state.gd"
+Audio="*res://autoload/audio.gd"
+Dialogue="*res://autoload/dialogue.gd"
+Router="*res://autoload/scene_router.gd"
 
 [display]
 
