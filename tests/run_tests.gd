@@ -2,9 +2,15 @@ extends SceneTree
 ## Runs every test_*.gd in this folder and exits with code 1 if any fail.
 ##   godot --headless --script res://tests/run_tests.gd
 ## Each test file extends TestCase; every method starting with "test_" is a test.
+## A test may await (e.g. physics frames, to simulate play): the next one
+## starts when it has finished.
 
 
 func _init() -> void:
+	_run.call_deferred()
+
+
+func _run() -> void:
 	var passed := 0
 	var failed := 0
 	for file in DirAccess.get_files_at("res://tests"):
@@ -16,7 +22,7 @@ func _init() -> void:
 			if not name.begins_with("test_"):
 				continue
 			var case: TestCase = script.new()
-			case.call(name)
+			await case.call(name)
 			if case.failures.is_empty():
 				passed += 1
 			else:
