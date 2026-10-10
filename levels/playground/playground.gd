@@ -39,7 +39,8 @@ func _ready() -> void:
 	_build_environment()
 	add_child(build_set())
 	_add_moving_parts()
-	santa = SantaController.spawn(self, Transform3D(Basis(Vector3.UP, PI), SANTA_START))
+	_add_cast()
+	santa =SantaController.spawn(self, Transform3D(Basis(Vector3.UP, PI), SANTA_START))
 	sleigh = SleighController.new()
 	add_child(sleigh)
 	sleigh.bounds_radius = 70.0
@@ -352,6 +353,26 @@ static func _build_ground_details(b: ToyBuilder) -> void:
 				1: WinterProps.add_dry_grass(b, spot, placed % 6)
 				2: WinterProps.add_fallen_twig(b, spot, placed)
 			placed += 1
+
+
+## Scrooge pacing his yard in front of the cabin door, solid enough that
+## Santa can't walk through him.
+func _add_cast() -> void:
+	var route: Array[Vector3] = [Vector3(-12.8, 0, -7.6), Vector3(-12.2, 0, -4.0), Vector3(-12.8, 0, -0.4)]
+	var scrooge := Pacer.new(Cast.make("scrooge"), route, 0.8)
+	scrooge.name = "ScroogePacing"
+	scrooge.stride = 0.7
+	scrooge.pause = 4.0
+	var body := AnimatableBody3D.new()
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.3
+	capsule.height = 1.7
+	shape.shape = capsule
+	shape.position.y = 0.85
+	body.add_child(shape)
+	scrooge.add_child(body)
+	add_child(scrooge)
 
 
 ## Things that move or can be hit: the moving platform, the snowmen, the

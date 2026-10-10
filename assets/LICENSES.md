@@ -39,6 +39,7 @@ Generated with Meshy (https://www.meshy.ai) on the free plan, which licenses its
 | File in `assets/characters/` | Notes |
 |---|---|
 | `santa.glb` | Santa. Image made with Nano Banana Pro inside Meshy, then turned to 3D with Meshy 6 Lite, textured, auto-rigged (Mixamo skeleton) and given Meshy's free animations: Walking, Running, Attack, Triple Combo Attack, BeHit FlyUp, Dead. Generated 2026-10-09; slimmed to 30k triangles with 1024 px normal and roughness maps (tools/blender/optimize_model.py). |
+| `scrooge.glb` | Ebenezer Scrooge. Made with Meshy 6 Lite text-to-3D, textured, auto-rigged (Mixamo skeleton) and given Meshy's free Walking and Running animations. Generated 2026-10-10; slimmed to 25k triangles with 512 px maps (1024 px base colour), the left ankle and both shoes re-weighted so the shoes stay stiff (tools/blender/optimize_model.py `--reweight`). |
 
 ## Generated in-house
 - `textures/generated/fir_branch.png`: fir needle cards, drawn by `tools/make_textures.gd`. No third-party content.
