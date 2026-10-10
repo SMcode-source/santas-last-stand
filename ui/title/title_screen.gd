@@ -86,6 +86,8 @@ func _show_menu() -> void:
 	_menu.add_child(UiTheme.button("New story", _new_story))
 	if GameState.has_save:
 		_menu.add_child(UiTheme.button("Advent calendar", Router.go_to.bind(Router.CALENDAR)))
+	# Until the first level is in, a place to try out Santa and the sleigh.
+	_menu.add_child(UiTheme.button("Playground", Router.go_to.bind(Router.PLAYGROUND)))
 	_menu.add_child(UiTheme.button("Settings", _settings))
 	_menu.add_child(UiTheme.button("Credits", Router.go_to.bind(Router.CREDITS)))
 	_menu.visible = true

@@ -7,6 +7,7 @@ const CALENDAR := "res://ui/calendar/advent_calendar.tscn"
 const STINGER := "res://ui/stinger/stinger_player.tscn"
 const CREDITS := "res://ui/credits/credits.tscn"
 const LEVEL_STUB := "res://levels/level_stub.tscn"
+const PLAYGROUND := "res://levels/playground/playground.tscn"
 const FADE_SECONDS := 0.35
 
 ## Handed to the next scene, e.g. which stinger to play.
