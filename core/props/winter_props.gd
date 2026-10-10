@@ -254,6 +254,49 @@ static func snowman(seed := 1) -> Node3D:
 	return root
 
 
+## A candle lantern: an iron frame with glass sides round a lit candle, and
+## a ring handle. Its origin is the top of the handle, to hang it by.
+static func lantern() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Lantern"
+	var b := ToyBuilder.new()
+	var iron := Color("26262a")
+	b.finished(ToyBuilder.torus(0.045, 0.008, 12, 4), iron, "metal", ToyBuilder.xf(Vector3(0, -0.045, 0), Vector3(90, 0, 0)))
+	b.finished(ToyBuilder.cylinder(0.05, 0.075, 0.05, 10), iron, "metal", ToyBuilder.xf(Vector3(0, -0.11, 0)))
+	b.finished(ToyBuilder.cylinder(0.08, 0.08, 0.015, 10), iron, "metal", ToyBuilder.xf(Vector3(0, -0.14, 0)))
+	b.finished(ToyBuilder.cylinder(0.085, 0.085, 0.02, 10), iron, "metal", ToyBuilder.xf(Vector3(0, -0.33, 0)))
+	for k in 4:
+		var a := TAU * (k + 0.5) / 4.0
+		b.finished(ToyBuilder.box(Vector3(0.012, 0.19, 0.012)), iron, "metal",
+				ToyBuilder.xf(Vector3(cos(a) * 0.075, -0.235, sin(a) * 0.075)))
+	b.finished(ToyBuilder.cylinder(0.018, 0.018, 0.07, 8), Color("f2e8d0"), "skin", ToyBuilder.xf(Vector3(0, -0.285, 0)))
+	b.add(ToyBuilder.sphere(0.014, 6), Color(1.0, 0.75, 0.35), ToyBuilder.xf(Vector3(0, -0.237, 0), Vector3.ZERO, Vector3(1, 1.8, 1)), true)
+	root.add_child(b.build(0.0, "Frame"))
+	var glass := MeshInstance3D.new()
+	glass.name = "Glass"
+	glass.mesh = ToyBuilder.cylinder(0.07, 0.07, 0.18, 4)
+	glass.rotation.y = PI / 4.0
+	glass.position.y = -0.235
+	var mat := StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(1.0, 0.85, 0.6, 0.22)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.6, 0.25)
+	mat.emission_energy_multiplier = 0.5
+	mat.roughness = 0.1
+	glass.material_override = mat
+	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(glass)
+	var light := FlickerLight.new()
+	light.light_color = Color("ffb35c")
+	light.base_energy = 1.1
+	light.flicker = 0.18
+	light.omni_range = 4.5
+	light.position = Vector3(0, -0.2, 0.15)
+	root.add_child(light)
+	return root
+
+
 ## A crackling campfire in a stone ring: crossed logs, flames, rising embers
 ## and a flickering warm light.
 static func campfire() -> Node3D:
@@ -269,20 +312,29 @@ static func campfire() -> Node3D:
 			Vector3.ZERO, Vector3(0.22, 0.06, 0.22), true)
 	root.add_child(b.build(0.0, "Logs"))
 
+	root.add_child(fire())
+	return root
+
+
+## Flames, rising embers and a flickering warm light: the fire of a campfire,
+## brazier or stove. `size` 1 is a campfire.
+static func fire(size := 1.0) -> Node3D:
+	var root := Node3D.new()
+	root.name = "Fire"
 	var flames := CPUParticles3D.new()
 	flames.name = "Flames"
 	flames.amount = 28
 	flames.lifetime = 0.8
-	flames.position = Vector3(0, 0.2, 0)
+	flames.position = Vector3(0, 0.2, 0) * size
 	flames.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	flames.emission_sphere_radius = 0.12
+	flames.emission_sphere_radius = 0.12 * size
 	flames.direction = Vector3.UP
 	flames.spread = 8
-	flames.initial_velocity_min = 0.5
-	flames.initial_velocity_max = 0.9
+	flames.initial_velocity_min = 0.5 * size
+	flames.initial_velocity_max = 0.9 * size
 	flames.gravity = Vector3(0, 0.6, 0)
-	flames.scale_amount_min = 0.25
-	flames.scale_amount_max = 0.4
+	flames.scale_amount_min = 0.25 * size
+	flames.scale_amount_max = 0.4 * size
 	var shrink := Curve.new()
 	shrink.add_point(Vector2(0, 1.0))
 	shrink.add_point(Vector2(1, 0.1))
@@ -299,7 +351,7 @@ static func campfire() -> Node3D:
 	embers.name = "Embers"
 	embers.amount = 14
 	embers.lifetime = 2.2
-	embers.position = Vector3(0, 0.35, 0)
+	embers.position = Vector3(0, 0.35, 0) * size
 	embers.direction = Vector3.UP
 	embers.spread = 25
 	embers.initial_velocity_min = 0.6
@@ -317,8 +369,8 @@ static func campfire() -> Node3D:
 	var light := FlickerLight.new()
 	light.light_color = Color("ff9a45")
 	light.base_energy = 2.2
-	light.omni_range = 6.0
-	light.position = Vector3(0, 0.6, 0)
+	light.omni_range = 6.0 * size
+	light.position = Vector3(0, 0.6, 0) * size
 	root.add_child(light)
 	return root
 

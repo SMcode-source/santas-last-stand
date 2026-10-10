@@ -276,7 +276,8 @@ func relax() -> void:
 
 
 ## Puts `item` in his hands. "axe" grips it by the handle; "box" holds it
-## between both hands. It follows his hands until let_go().
+## between both hands; "lantern" hangs it by its handle from his left hand.
+## It follows his hands until let_go().
 func hold(item: Node3D, mode: String) -> void:
 	_held = item
 	_held_mode = mode
@@ -481,6 +482,10 @@ func _place_held() -> void:
 	var body := global_basis.orthonormalized()
 	if _held_mode == "box":
 		_held.global_transform = Transform3D(body, (left + right) / 2.0 + body * Vector3(0, -0.06, 0.07))
+		return
+	if _held_mode == "lantern":
+		# Hangs upright by its handle from the left hand.
+		_held.global_transform = Transform3D(body, left + body * Vector3(0, -0.06, 0.02))
 		return
 	_held.global_transform = _axe_xf
 

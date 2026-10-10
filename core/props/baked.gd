@@ -16,6 +16,7 @@ static func recipes() -> Dictionary:
 	return {
 		"title_camp": load("res://hello/hello_santa.gd").build_camp,
 		"santa_fur": SantaModel.build_fur,
+		"workshop_set": WorkshopSet.build,
 	}
 
 

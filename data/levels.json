@@ -8,8 +8,16 @@
 	},
 	{
 		"id": "l1", "day": 2, "date": "2 December", "title": "The Frozen Workshop", "genre": "3D platformer",
-		"difficulty": 2, "minutes": 13, "finale": "Boss fight", "scene": "", "call": "", "stinger": "",
-		"recap": "", "checkpoints": ["workshop", "clock_tower", "boss"], "hints": {}
+		"difficulty": 2, "minutes": 13, "finale": "Boss fight", "scene": "res://levels/01_frozen_workshop/frozen_workshop.tscn",
+		"call": "calls/l1", "stinger": "",
+		"recap": "Jack Frost froze the North Pole solid. Santa relit the three workshop furnaces, climbed the Clock Tower and drove Frost off with the clock's own steam, but Frost's parting blizzard clipped Blitzen's wing.",
+		"checkpoints": ["workshop", "clock_tower", "boss"],
+		"hints": {
+			"start": "Stay warm between jumps! Every brazier tops your warmth up, and so does a furnace once it's lit.",
+			"workshop": "Stay warm between jumps! Every brazier tops your warmth up, and so does a furnace once it's lit. Take your run-up with Shift for the longer gaps.",
+			"clock_tower": "No rush on the tower. Warm up at each lantern on the way, and wait for the moving planks to come right up to the edge before you step on.",
+			"boss": "Punching Frost's ice does nothing. Watch which gear glows blue: that's where he'll hop. Turn the crank so the clock's hand points at that gear's pipe, and the steam melts his armour. Then punch him!"
+		}
 	},
 	{
 		"id": "l2", "day": 5, "date": "5 December", "title": "Krampusnacht", "genre": "Brawler",

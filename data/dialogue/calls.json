@@ -4,5 +4,11 @@
 		{"who": "president", "text": "Just out of curiosity... where do you keep the List?"},
 		{"who": "santa", "text": "...Why?"},
 		{"who": "president", "text": "Asking for a friend."}
+	],
+	"l1": [
+		{"who": "president", "text": "Santa! Heard you beat Frost. Fantastic. Tremendous fight, I'm told. Tremendous."},
+		{"who": "santa", "text": "That was an hour ago."},
+		{"who": "president", "text": "Word travels. I have the best people. Keep it up, big things are coming. Huge."},
+		{"who": "holly", "text": "*Off-mic.* ...We haven't told anyone yet."}
 	]
 }

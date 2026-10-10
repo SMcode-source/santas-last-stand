@@ -1,0 +1,80 @@
+{
+	"intro": [
+		{"caption": "2 December. The North Pole."},
+		{"caption": "The workshop is frozen solid. Snow drifts through the halls; the conveyor belts stand still under ice."},
+		{"who": "holly", "text": "Nick? Nick, can you hear me? I'm in the Clock Tower office. The door's iced shut."},
+		{"who": "holly", "text": "It was Jack Frost. He froze the whole workshop in one night. He was laughing, Nick. Like he'd been promised something."},
+		{"choice": [
+			{"text": "Hang on, Holly. I'll have you thawed out by teatime.", "tone": "jolly", "then": [
+				{"who": "holly", "text": "Make it before teatime. The kettle's frozen too."}
+			]},
+			{"text": "Then he answers for it. Where is he?", "tone": "stern", "then": [
+				{"who": "holly", "text": "On top of the Clock Tower, last I saw. You'll need the tower thawed first."}
+			]},
+			{"text": "Promised something? By whom? Frost doesn't have friends.", "tone": "sardonic", "then": [
+				{"who": "holly", "text": "He does now, apparently. Somebody's paying for all this ice."}
+			]}
+		]},
+		{"who": "holly", "text": "The three furnaces are out: the Toy Line to the west, the Wrapping Hall to the east, the Stables to the north."},
+		{"who": "holly", "text": "Light them with your lantern. And don't stand about in the cold. Warm up by the braziers when you can."}
+	],
+	"start": [
+		{"who": "holly", "text": "The ice round the terrace is thin, Nick. Fall in and you'll go straight through."}
+	],
+	"first_furnace": [
+		{"who": "holly", "text": "That's one! Feel that? Those pipes run straight up the Clock Tower, Nick."}
+	],
+	"second_furnace": [
+		{"who": "holly", "text": "Two lit. The ice on the tower is starting to drip."}
+	],
+	"all_lit": [
+		{"who": "holly", "text": "All three! The ice on the Clock Tower is melting. Climb up, Nick. He's on the roof."}
+	],
+	"cold": [
+		{"who": "holly", "text": "You're turning blue! Get to a fire, quickly."}
+	],
+	"cold_again": [
+		{"who": "holly", "text": "Warm up, Nick! Find a brazier or a lantern."}
+	],
+	"climb_low": [
+		{"who": "frost", "text": "Nipping at noses — that's my whole song! But this year I'm the face of winter."}
+	],
+	"climb_high": [
+		{"who": "frost", "text": "Come on up, old man. That clock's been stuck since I got here!"}
+	],
+	"boss_intro": [
+		{"who": "frost", "text": "Well, well. Saint Nick, all out of breath."},
+		{"who": "frost", "text": "Hit me all you like. This ice doesn't melt for anybody."},
+		{"who": "holly", "text": "Nick, the crank on the column turns the clock's hand. Every pipe up there is hot now..."}
+	],
+	"frost_armoured": [
+		{"who": "frost", "text": "Ha! Is that a punch or a pat on the head?"}
+	],
+	"frost_armoured_2": [
+		{"who": "frost", "text": "Solid ice, Nicky. Try again next century."}
+	],
+	"frost_missed": [
+		{"who": "frost", "text": "Missed me! Lovely bit of steam, though."}
+	],
+	"frost_exposed": [
+		{"who": "frost", "text": "Hot! Hot! HOT!"}
+	],
+	"frost_hop": [
+		{"who": "frost", "text": "Over here!"}
+	],
+	"phase_1": [
+		{"who": "frost", "text": "Ow! You think this is about me? The Benefactor's got bigger plans than me!"}
+	],
+	"phase_2": [
+		{"who": "frost", "text": "Fine! FINE! You want winter? Have ALL of it!"}
+	],
+	"outro": [
+		{"caption": "The last of the steam clears. Jack Frost staggers to the edge of the tower, dripping."},
+		{"who": "frost", "text": "This isn't over! You'll see. Everyone will see!"},
+		{"caption": "He vanishes in a howling blizzard. Down in the stables, Blitzen is caught in the gust, and something cracks."},
+		{"who": "santa", "text": "Blitzen!"},
+		{"caption": "The workshop thaws. In the meltwater on the tower roof, flakes of gold glint where Frost stood."},
+		{"who": "jingles", "text": "Sir... before the freeze, men in red caps from the White House came to inspect the vault, sir."},
+		{"who": "santa", "text": "Inspect the vault? Nobody told me."}
+	]
+}

@@ -36,6 +36,14 @@ float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 
+// A hash without sin(), which keeps its randomness far from the origin
+// (sin() of a large number loses precision and the sparkles form a grid).
+float hash_far(vec2 p) {
+	vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+	p3 += dot(p3, p3.yzx + 33.33);
+	return fract((p3.x + p3.y) * p3.z);
+}
+
 // Depth of the boot prints under `p` (0 outside, 1 at the bottom of a print).
 float prints(vec2 p) {
 	if (any(lessThan(p, trail_bounds.xy)) || any(greaterThan(p, trail_bounds.zw))) {
@@ -127,6 +135,6 @@ void fragment() {
 	vec2 cell = floor(world_pos.xz * 55.0);
 	vec3 view_world = (INV_VIEW_MATRIX * vec4(VIEW, 0.0)).xyz;
 	float angle_bucket = floor(dot(view_world, vec3(9.0, 13.0, 7.0)) * 1.5);
-	float glint = step(sparkle_density, hash(cell + angle_bucket * 0.618)) * (1.0 - print_depth);
+	float glint = step(sparkle_density, hash_far(cell + angle_bucket * 0.618)) * (1.0 - print_depth);
 	EMISSION = vec3(0.85, 0.92, 1.0) * glint * sparkle_strength * (1.0 - smoothstep(4.0, 14.0, dist));
 }

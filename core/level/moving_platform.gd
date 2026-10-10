@@ -12,6 +12,8 @@ var to := Vector3(4, 0, 0)
 var travel_time := 3.0
 ## Seconds it waits at each end.
 var pause := 0.6
+## Seconds into its cycle it starts (to set platforms out of step).
+var phase := 0.0
 
 var _start := Vector3.ZERO
 var _time := 0.0
@@ -46,6 +48,7 @@ func _init() -> void:
 
 func _ready() -> void:
 	_start = position
+	_time = phase
 
 
 func _physics_process(delta: float) -> void:
