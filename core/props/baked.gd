@@ -18,6 +18,7 @@ static func recipes() -> Dictionary:
 		"santa_fur": SantaModel.build_fur,
 		"workshop_set": WorkshopSet.build,
 		"village_set": VillageSet.build,
+		"boardroom_set": BoardroomSet.build,
 	}
 
 

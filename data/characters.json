@@ -8,5 +8,6 @@
 	"president": {"name": "The President", "color": "#ffd86b", "pitch": 0.9},
 	"brick": {"name": "Agent Brick", "color": "#9aa5b1", "pitch": 0.5},
 	"frost": {"name": "Jack Frost", "color": "#9fd8ff", "pitch": 1.35},
-	"krampus": {"name": "Krampus", "color": "#e0573f", "pitch": 0.45}
+	"krampus": {"name": "Krampus", "color": "#e0573f", "pitch": 0.45},
+	"scrooge": {"name": "Ebenezer Scrooge", "color": "#c9b98a", "pitch": 0.62}
 }

@@ -1,0 +1,114 @@
+{
+	"intro": [
+		{"caption": "9 December. The City of London."},
+		{"caption": "Every wrapping-paper factory on Earth has been bought in a single week, all by one firm: Scrooge & Co."},
+		{"who": "pepper", "text": "No paper, no wrapping. No wrapping, no Christmas. Well, a very lumpy one."},
+		{"who": "scrooge", "text": "Nicholas. Come in. Don't stand by the fire, there isn't one."},
+		{"choice": [
+			{"text": "Ebenezer! You look... thrifty.", "tone": "jolly", "then": [
+				{"who": "scrooge", "text": "And you look fed. Some of us have had a lean century."}
+			]},
+			{"text": "Every paper mill in the world, Ebenezer. Why?", "tone": "stern", "then": [
+				{"who": "scrooge", "text": "Because paper is money, Nicholas, and money is the only friend that stays."}
+			]},
+			{"text": "Business booming? Or is that just the echo in here?", "tone": "sardonic", "then": [
+				{"who": "scrooge", "text": "Laugh. The echo is all mine, and so is every sheet of paper you need."}
+			]}
+		]},
+		{"who": "scrooge", "text": "A hundred and eighty years of generosity gets you debt, Nicholas. I gave it all away, every Christmas, and then there was nothing left to give."},
+		{"who": "scrooge", "text": "Then a gentleman offered to make Scrooge rich again."},
+		{"who": "santa", "text": "What gentleman?"},
+		{"who": "scrooge", "text": "A generous one. Unlike some. Twelve days to your shipping deadline. Buy me out if you can. I warn you: my backers' pockets have no bottom."},
+		{"who": "pepper", "text": "Right. The map's our game board, Santa. Click on a town to open its ledger. We can do three things a day, then we end the day."},
+		{"who": "pepper", "text": "Our own land's up north. If we build elf paper mills there, they'll pay for everything else."}
+	],
+	"first_bid": [
+		{"who": "scrooge", "text": "Outbid! Golden Tower money, Nicholas. It never runs out. Your deposit, however, is mine."}
+	],
+	"bid_again": [
+		{"who": "scrooge", "text": "Again? Splendid. I do love a deposit."}
+	],
+	"bid_hint": [
+		{"who": "pepper", "text": "Santa, we can't outspend him. But look at his ledger: 'wages at 1842 rates'! Those workers are freezing. Maybe they're the ones to win over."}
+	],
+	"first_kindness": [
+		{"who": "pepper", "text": "Listen! They're cheering down there. Fill that ring and they'll down tools."}
+	],
+	"wages_note": [
+		{"who": "pepper", "text": "Proper wages keep warming them up every single day. It costs us a little each day too, mind."}
+	],
+	"bonus": [
+		{"who": "scrooge", "text": "A farthing each for the loyal staff of {town}. Don't spend it all at once."}
+	],
+	"shell": [
+		{"who": "pepper", "text": "A company nobody's heard of just bought {supplier}! It's Scrooge in a false moustache, I'd bet my bells on it."}
+	],
+	"strike": [
+		{"who": "pepper", "text": "{town} is on strike! The whole mill has walked out. They'll be ours by morning!"}
+	],
+	"joined_1": [
+		{"who": "scrooge", "text": "{town}? Ungrateful wretches. I pay them... I pay them what I paid in 1842."}
+	],
+	"joined_2": [
+		{"who": "scrooge", "text": "Old Fezziwig used to shut up the warehouse at Christmas and pay us all the same. A fool. A kind old fool."}
+	],
+	"joined_3": [
+		{"who": "scrooge", "text": "Cratchit had a boy. Little crutch. I bought the biggest turkey in the shop that year. Why am I telling you this?"}
+	],
+	"joined_4": [
+		{"who": "scrooge", "text": "I was generous once, Nicholas. It cost me everything I had. ...It was the best I ever was."}
+	],
+	"joined_5": [
+		{"who": "scrooge", "text": "Enough. I know exactly what you're doing. ...It's working."}
+	],
+	"poor": [
+		{"who": "pepper", "text": "Careful, Santa, the purse is getting thin. If it's empty at the end of a day, we're bankrupt."}
+	],
+	"deadline_near": [
+		{"who": "pepper", "text": "Only a few days left before the vote. Count the votes in the corner: we need a majority!"}
+	],
+	"letter": [
+		{"caption": "A letter, tucked under the mill gate at Smogbury, in careful handwriting."},
+		{"caption": "\"Dear Father Christmas, Papa works at the paper mill. He says there is no money for presents this year because the wages are the same as when Grandpapa worked there. Please don't bring me anything. Could you bring Papa a warm coat instead? He is always cold. Love, Ada (age 7)\""},
+		{"who": "pepper", "text": "...Santa. We have to help these people."}
+	],
+	"vote_intro": [
+		{"caption": "The shareholders of Scrooge & Co. gather round the table to vote."},
+		{"who": "scrooge", "text": "The motion: that Scrooge & Co. surrender every paper contract to the gentleman in red. All those in favour?"}
+	],
+	"vote_won": [
+		{"caption": "The motion is carried."},
+		{"who": "scrooge", "text": "...Carried. Well. Well, well, well."}
+	],
+	"vote_lost": [
+		{"caption": "The motion falls."},
+		{"who": "scrooge", "text": "Defeated! The paper stays mine. Humbug, Nicholas. Humbug."}
+	],
+	"outro": [
+		{"cue": "black"},
+		{"caption": "That evening. A small terraced house in Camden Town, with the curtains open."},
+		{"caption": "A family at supper, three generations round one table. At its head, an empty chair, and a place set for \"Uncle Ebenezer\"."},
+		{"who": "pepper", "text": "Tiny Tim's great-great-great-granddaughter lives there. They've set that place every Christmas for a hundred and eighty years."},
+		{"who": "scrooge", "text": "...They kept a chair."},
+		{"who": "santa", "text": "You were on my Naughty List in 1842 too, Ebenezer. It didn't stop you."},
+		{"choice": [
+			{"text": "Go on in. Your soup's getting cold.", "tone": "jolly", "then": [
+				{"who": "scrooge", "text": "Soup. I... I do like soup."}
+			]},
+			{"text": "Whoever's paying you isn't your friend. They are.", "tone": "stern", "then": [
+				{"who": "scrooge", "text": "No. No, he isn't, is he."}
+			]},
+			{"text": "And look at that: they've got coal.", "tone": "sardonic", "then": [
+				{"who": "scrooge", "text": "Don't. Don't make me laugh, I'll cry."}
+			]}
+		]},
+		{"who": "scrooge", "text": "The contracts. All of them. Take them, before I change my mind."},
+		{"who": "pepper", "text": "Every one of them's signed by... \"Golden Tower Holdings\"? Who's that?"},
+		{"who": "scrooge", "text": "I never met him. Only his lawyers, and his letters, edged in gold."},
+		{"who": "santa", "text": "Merry Christmas, Ebenezer."},
+		{"who": "scrooge", "text": "Merry Christmas, Nicholas. I'll... I'll see about some coal."},
+		{"cue": "back"},
+		{"caption": "Back at the counting-house, for the first time in years, there is a fire in the grate."},
+		{"who": "holly", "text": "Nick? It's Holly. Well done, love. ...Odd thing: Jingles hasn't come to supper in two days. It's probably nothing."}
+	]
+}

@@ -15,5 +15,12 @@
 		{"who": "president", "text": "Santa! Krampus. Horns. I knew he'd be there."},
 		{"who": "santa", "text": "How?"},
 		{"who": "president", "text": "I know things. Everybody says I know things. Great job, by the way. Very strong. Very goat-free."}
+	],
+	"l3": [
+		{"who": "president", "text": "Santa! Paper. The biggest paper deal in history, and you got it for nothing. Tremendous negotiating. I'd have done it faster."},
+		{"who": "santa", "text": "Ebenezer gave it up himself, in the end."},
+		{"who": "president", "text": "Sure, sure. And Golden Tower, total disaster of a company. Sad. I barely know them."},
+		{"who": "pepper", "text": "...Sir? How do you know that name? We haven't read it out to anyone yet."},
+		{"who": "president", "text": "Golden Tower? It's... it's what I'd call a building. If I built one. Which I might. Great call, everybody. Bye."}
 	]
 }

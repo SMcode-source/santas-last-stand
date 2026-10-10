@@ -34,8 +34,16 @@
 	},
 	{
 		"id": "l3", "day": 9, "date": "9 December", "title": "The Paper Monopoly", "genre": "Strategy",
-		"difficulty": 4, "minutes": 13, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
-		"recap": "", "checkpoints": [], "hints": {}
+		"difficulty": 4, "minutes": 13, "finale": "Shareholder vote", "scene": "res://levels/03_paper_monopoly/paper_monopoly.tscn",
+		"call": "calls/l3", "stinger": "",
+		"recap": "Scrooge & Co. bought every paper mill on Earth. Santa couldn't outbid Golden Tower money, so he won the workers over instead, and the shareholders voted the paper back. Scrooge handed over contracts signed by Golden Tower Holdings, and went to supper in Camden Town.",
+		"checkpoints": ["day5", "day9"],
+		"hints": {
+			"start": "Bidding never works: Scrooge's backers always pay more. Build elf mills on our land and buy the suppliers early, then be kind to his workers. Wages, toys and meals fill a town's ring until it strikes and comes over to us.",
+			"day5": "Pick one town and fill its ring before moving on: Scrooge's bonus only goes to the warmest town, a little each night. Don't give the same kindness twice running, it only counts half. Press Ask Pepper if you're stuck!",
+			"day9": "Count the votes at the top. Towns are worth 2, suppliers 1, and Scrooge has 2 of his own. Keep enough coins back for tonight's bills, or we go bankrupt.",
+			"vote": "We need more towns on our side before the vote. Raised wages warm a town every day by themselves, so raise them early. Press Ask Pepper for a plan."
+		}
 	},
 	{
 		"id": "l4", "day": 12, "date": "12 December", "title": "The Yule Cat Prowls", "genre": "Stealth",
