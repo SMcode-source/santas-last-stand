@@ -1,0 +1,163 @@
+{
+	"flight_intro": [
+		{"caption": "5 December. Krampusnacht. Somewhere over the Alps."},
+		{"who": "holly", "text": "Nick, the elves sent to St. Wendel's never came home. The whole village has gone dark. Not a candle, not a bell."},
+		{"who": "holly", "text": "It's the fifth of December. You know whose night this is."},
+		{"choice": [
+			{"text": "I know. I'll bring them home, Holly.", "tone": "jolly", "then": [
+				{"who": "holly", "text": "Bring yourself home as well. In one piece, please."}
+			]},
+			{"text": "If it's him, this ends tonight.", "tone": "stern", "then": [
+				{"who": "holly", "text": "Four hundred years and you still can't say his name."}
+			]},
+			{"text": "Maybe he's just put up some very dark decorations.", "tone": "sardonic", "then": [
+				{"who": "holly", "text": "Elves in sacks, Nick. That isn't tinsel."}
+			]}
+		]},
+		{"who": "holly", "text": "Follow the valley. Steer with A and D or the mouse, W and S for speed, Shift to boost. The sleigh keeps to the road on its own."}
+	],
+	"flight_rings": [
+		{"who": "holly", "text": "Those lights in the sky are beacons. Fly through them and the reindeer get their second wind."}
+	],
+	"sack_wriggle": [
+		{"who": "santa", "text": "...Holly, did you pack anything alive in the toy sack?"},
+		{"who": "holly", "text": "Not on purpose."}
+	],
+	"pepper": [
+		{"who": "pepper", "text": "Ta-da! Don't turn round, keep your eyes on the mountains!"},
+		{"who": "santa", "text": "Pepper! You're supposed to be at the workshop."},
+		{"who": "pepper", "text": "You need a navigator. And I need someone to take me seriously!"},
+		{"who": "pepper", "text": "Also it was very cramped in there and somebody packed a xylophone."}
+	],
+	"village_dark": [
+		{"who": "pepper", "text": "There it is. St. Wendel's. Santa, there isn't a single light on."},
+		{"who": "santa", "text": "Hold on. We're going down."}
+	],
+	"landed": [
+		{"who": "pepper", "text": "Something's moving up the street. Lots of somethings. With horns."},
+		{"who": "santa", "text": "His helpers. Stay with the sleigh, Pepper."},
+		{"who": "pepper", "text": "Absolutely not. Punch with the left mouse button! And right-click or R to block. Time it as they swing and they'll fall right over!"}
+	],
+	"first_beaten": [
+		{"who": "pepper", "text": "Poof! Do they all go poof? I hope they all go poof."}
+	],
+	"first_parry": [
+		{"who": "pepper", "text": "Ooh, you blocked that! Do that again! Do that every time!"}
+	],
+	"arrival": [
+		{"caption": "The church square. Six sacks hang from the bell tower, and every one of them is wriggling."},
+		{"who": "krampus", "text": "Hello, Nick. Four hundred years and you still dress like a postbox."},
+		{"caption": "1620."},
+		{"caption": "Two figures in the snow: one red, one horned. The red one points down the mountain, and the horned one goes."},
+		{"choice": [
+			{"text": "Hello, old friend. Let them down.", "tone": "jolly", "then": [
+				{"who": "krampus", "text": "Old friend. You did hear yourself say that, didn't you?"}
+			]},
+			{"text": "Let them down. Now.", "tone": "stern", "then": [
+				{"who": "krampus", "text": "Still giving orders. Some of us stopped taking them a long time ago."}
+			]},
+			{"text": "And you still smell like a wet stable.", "tone": "sardonic", "then": [
+				{"who": "krampus", "text": "Ha! I've missed that. I've missed nothing else, but I've missed that."}
+			]}
+		]},
+		{"who": "krampus", "text": "Tonight is my night, Nick. My List. My village. My little sacks of elves."},
+		{"who": "krampus", "text": "Boys! Take them over the bridge."},
+		{"who": "pepper", "text": "They're cutting the sacks down! Stop them before they reach the bridge, then press E to untie a sack!"}
+	],
+	"first_drop": [
+		{"who": "pepper", "text": "It dropped one! Quick, E to untie it!"}
+	],
+	"freed_1": [
+		{"who": "pepper", "text": "You're out! Go, go, run to the church! The bell ropes are inside!"}
+	],
+	"freed_2": [
+		{"who": "pepper", "text": "Another one! They're heading for the bells. Keep them coming!"}
+	],
+	"freed_3": [
+		{"who": "pepper", "text": "That's enough hands for the bell ropes now. Every one you save makes it ring louder!"}
+	],
+	"lost_1": [
+		{"who": "pepper", "text": "No! One got over the bridge! Don't let them reach the west end of the square!"}
+	],
+	"lost_2": [
+		{"who": "pepper", "text": "That's two gone, Santa. We can't lose another one!"}
+	],
+	"taunt_1": [
+		{"who": "krampus", "text": "Faster, Nick! You used to be faster. You used to be a lot of things."}
+	],
+	"taunt_2": [
+		{"who": "krampus", "text": "Every sack over that bridge is one more name off your precious List."}
+	],
+	"boss_intro": [
+		{"who": "krampus", "text": "Enough. Hear that, Nick? Silence. Nobody here believes in you any more."},
+		{"who": "krampus", "text": "In the dark, I don't bruise. Come and find out."},
+		{"who": "pepper", "text": "Santa, the elves are at the bell ropes! Get to the church door and press E. Make some noise!"}
+	],
+	"parry_hint": [
+		{"who": "pepper", "text": "He's winding up that chain! Block just as it comes down: right-click or R!"}
+	],
+	"dark_punch": [
+		{"who": "krampus", "text": "Is that it? It's dark, Nick. I can't feel a thing in the dark."}
+	],
+	"dark_punch_2": [
+		{"who": "pepper", "text": "It's not working! The bells, Santa! Ring the bells!"}
+	],
+	"dark_parry": [
+		{"who": "krampus", "text": "Nice block. Doesn't matter. Not in the dark."}
+	],
+	"tickles": [
+		{"who": "krampus", "text": "That tickles. Is that what four hundred years of milk and cookies does to a man?"}
+	],
+	"caught_hint": [
+		{"who": "pepper", "text": "You've got his chain! Hit him NOW!"}
+	],
+	"countered": [
+		{"who": "krampus", "text": "Swing, swing, swing. You always did fight like a toddler with a stick."},
+		{"who": "pepper", "text": "Don't just flail at him! Block the chain first, then hit!"}
+	],
+	"yanked": [
+		{"who": "pepper", "text": "Too slow! Hit him while you've still got hold of the chain!"}
+	],
+	"bells": [
+		{"who": "krampus", "text": "No! Not the bells! I hate the bells!"},
+		{"who": "pepper", "text": "The lights are coming on! He's flinching! Now he can be hurt!"}
+	],
+	"bells_again": [
+		{"who": "pepper", "text": "Lights are back! Get him!"}
+	],
+	"phase_1": [
+		{"who": "krampus", "text": "Oof! Lucky. You were always lucky."}
+	],
+	"lights_out": [
+		{"who": "krampus", "text": "Who needs light? I like the dark. The dark likes me."},
+		{"who": "pepper", "text": "He's put the lights out! Back to the church door, ring them again!"}
+	],
+	"phase_2": [
+		{"who": "krampus", "text": "ENOUGH! Two chains, Nick! Let's see you catch both!"},
+		{"who": "pepper", "text": "He's lashing twice now! Block, then block again!"}
+	],
+	"outro": [
+		{"caption": "Krampus lies in the snow. The bells are still ringing."},
+		{"who": "krampus", "text": "Go on, then. Finish it. You've been wanting to since 1620."},
+		{"choice": [
+			{"text": "No. I'm not banishing anyone tonight.", "tone": "jolly", "then": [
+				{"who": "krampus", "text": "...That's new."}
+			]},
+			{"text": "Get up. I want answers, not a trophy.", "tone": "stern", "then": [
+				{"who": "krampus", "text": "Answers. From me. Well, that's new."}
+			]},
+			{"text": "And ruin my coat? Not likely.", "tone": "sardonic", "then": [
+				{"who": "krampus", "text": "The postbox has jokes now."}
+			]}
+		]},
+		{"who": "santa", "text": "Who's paying you?"},
+		{"who": "krampus", "text": "I'm a goat, Nick. I don't even have a phone."},
+		{"cue": "krampus_leaves"},
+		{"caption": "And he's gone, up over the rooftops and away into the mountains."},
+		{"who": "pepper", "text": "Santa? Come and look at this. On the sack ropes."},
+		{"who": "pepper", "text": "Hair. Coarse and dark, all tangled into the knots. Goat hair, I think."},
+		{"who": "santa", "text": "...Keep it, Pepper. Put it somewhere safe."},
+		{"who": "pepper", "text": "Does this mean I'm the navigator now?"},
+		{"who": "santa", "text": "It means you're the navigator now."}
+	]
+}

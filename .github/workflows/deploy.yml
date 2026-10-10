@@ -59,6 +59,7 @@ jobs:
           ~/godot/godot --headless --path . res://tools/bake.tscn
           test -f baked/title_camp.scn
           test -f baked/workshop_set.scn
+          test -f baked/village_set.scn
 
       - name: Export web build
         run: |

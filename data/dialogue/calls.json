@@ -10,5 +10,10 @@
 		{"who": "santa", "text": "That was an hour ago."},
 		{"who": "president", "text": "Word travels. I have the best people. Keep it up, big things are coming. Huge."},
 		{"who": "holly", "text": "*Off-mic.* ...We haven't told anyone yet."}
+	],
+	"l2": [
+		{"who": "president", "text": "Santa! Krampus. Horns. I knew he'd be there."},
+		{"who": "santa", "text": "How?"},
+		{"who": "president", "text": "I know things. Everybody says I know things. Great job, by the way. Very strong. Very goat-free."}
 	]
 }

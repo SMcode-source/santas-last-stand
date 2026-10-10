@@ -21,8 +21,16 @@
 	},
 	{
 		"id": "l2", "day": 5, "date": "5 December", "title": "Krampusnacht", "genre": "Brawler",
-		"difficulty": 3, "minutes": 13, "finale": "Boss fight", "scene": "", "call": "", "stinger": "",
-		"recap": "", "checkpoints": [], "hints": {}
+		"difficulty": 3, "minutes": 13, "finale": "Boss fight", "scene": "res://levels/02_krampusnacht/krampusnacht.tscn",
+		"call": "calls/l2", "stinger": "",
+		"recap": "Elves were snatched on Krampusnacht and hung in sacks from an Alpine bell tower. Pepper stowed away in the sleigh, Santa fought through Krampus's helpers, rang the church bells and beat his old partner with his own chain, then let him go. Pepper found goat hair on the sack ropes.",
+		"checkpoints": ["village", "square", "boss"],
+		"hints": {
+			"flight": "Nothing can go wrong on the flight. Steer with A and D or the mouse, and fly through the gold rings to refill your boost.",
+			"village": "Block with right-click or R just as a helper swings its claws: it'll stagger, and then your punches land free. Your health creeps back if you keep out of trouble for a bit.",
+			"square": "Go for the helpers carrying sacks first. Knock one down, then press E by the dropped sack to free the elf. The ones still waiting at the tower can wait.",
+			"boss": "In the dark nothing hurts Krampus. Go to the church door and press E to ring the bells. Then don't just punch: block his chain with right-click or R as it lashes, and while you hold it, attack to slam him."
+		}
 	},
 	{
 		"id": "l3", "day": 9, "date": "9 December", "title": "The Paper Monopoly", "genre": "Strategy",
