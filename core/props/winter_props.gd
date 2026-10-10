@@ -455,17 +455,8 @@ static func log_cabin(seed := 1) -> Node3D:
 			b.finished(ToyBuilder.sphere(0.009, 6), hinge.darkened(0.3), "metal", ToyBuilder.xf(Vector3(-0.36 + n * 0.13, hy, front + 0.124)))
 	b.finished(ToyBuilder.box(Vector3(0.08, 0.13, 0.01)), hinge, "metal", ToyBuilder.xf(Vector3(0.28, 0.98, front + 0.115)))
 	b.finished(ToyBuilder.torus(0.04, 0.008, 14, 6), Color("3a3330"), "metal", ToyBuilder.xf(Vector3(0.28, 0.92, front + 0.128), Vector3(90, 0, 0)))
-	var wreath := Vector3(0, 1.42, front + 0.14)
-	b.add(ToyBuilder.lumpy(ToyBuilder.torus(0.2, 0.07, 24, 10), 0.03, 14.0, seed), PINE.darkened(0.3), ToyBuilder.xf(wreath, Vector3(90, 0, 0)))
-	for k in 9:
-		var a := TAU * k / 9.0 + 0.3
-		b.part(ToyBuilder.sphere(0.025), BERRY, wreath + Vector3(cos(a) * 0.21, sin(a) * 0.21, 0.07))
-	for sx: float in [-1.0, 1.0]:
-		b.finished(ToyBuilder.torus(0.045, 0.016, 14, 6), BERRY, "velvet",
-				ToyBuilder.xf(wreath + Vector3(sx * 0.06, -0.2, 0.08), Vector3(90, 0, 0), Vector3(1.5, 1, 0.75)))
-		b.finished(ToyBuilder.box(Vector3(0.035, 0.16, 0.008)), BERRY, "velvet",
-				ToyBuilder.xf(wreath + Vector3(sx * 0.03, -0.29, 0.085), Vector3(0, 0, sx * 14)))
-	b.finished(ToyBuilder.sphere(0.024, 10), BERRY.darkened(0.1), "velvet", ToyBuilder.xf(wreath + Vector3(0, -0.2, 0.09), Vector3.ZERO, Vector3(1, 1.1, 0.7)))
+	var sprigs := _Foliage.new()
+	add_wreath(b, sprigs, ToyBuilder.xf(Vector3(0, 1.42, front + 0.13)), seed)
 	b.textured(ToyBuilder.box(Vector3(1.3, 0.12, 0.5)), "old_stone_wall", ToyBuilder.xf(Vector3(0, 0.06, front + 0.3)), 0.8, Color.WHITE, 0.5)
 
 	# Windows: timber frames, warm glass with crossbars, and sills that catch snow
@@ -521,6 +512,8 @@ static func log_cabin(seed := 1) -> Node3D:
 	var cabin_mesh := b.build(0.0, "Mesh")
 	ends.add_to(cabin_mesh.mesh, end_grain_material())
 	panes.add_to(cabin_mesh.mesh, window_material())
+	cabin_mesh.mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, sprigs.arrays())
+	cabin_mesh.mesh.surface_set_material(cabin_mesh.mesh.get_surface_count() - 1, wreath_material())
 	root.add_child(cabin_mesh)
 
 	var lantern := PbrLibrary.model("wooden_lantern_01", 0.0)
@@ -1000,15 +993,100 @@ static func add_fallen_twig(b: ToyBuilder, at: Transform3D, seed := 1) -> void:
 
 
 ## A pine cone lying in the snow, scales spiralling round a core.
-static func add_pine_cone(b: ToyBuilder, at: Transform3D) -> void:
+static func add_pine_cone(b: ToyBuilder, at: Transform3D, tint := Color.WHITE) -> void:
 	b.textured(ToyBuilder.sphere(1.0, 6), "bark_brown_02",
-			at * ToyBuilder.xf(Vector3(0, 0.02, 0), Vector3.ZERO, Vector3(0.026, 0.026, 0.048)), 0.3)
+			at * ToyBuilder.xf(Vector3(0, 0.02, 0), Vector3.ZERO, Vector3(0.026, 0.026, 0.048)), 0.3, tint)
 	for k in 8:
 		var a := k * 2.4
 		var z := lerpf(-0.036, 0.036, k / 7.0)
 		var r := 0.026 * sqrt(1.0 - pow(z / 0.05, 2.0))
 		b.textured(ToyBuilder.box(Vector3(0.016, 0.004, 0.014)), "bark_brown_02",
-				at * ToyBuilder.xf(Vector3(cos(a) * r, 0.02 + sin(a) * r, z), Vector3(0, 0, rad_to_deg(a) + 90)), 0.3)
+				at * ToyBuilder.xf(Vector3(cos(a) * r, 0.02 + sin(a) * r, z), Vector3(0, 0, rad_to_deg(a) + 90)), 0.3, tint)
+
+
+## A fir wreath hung on a door, facing +z at `at` (about 0.55 m across):
+## fir sprigs (needle cards, added to `sprigs`) wired round a dark core, pine
+## cones, holly with glossy berries, and a velvet bow on a hanging ribbon.
+static func add_wreath(b: ToyBuilder, sprigs: _Foliage, at: Transform3D, seed := 1) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed * 31 + 7
+	var ring := 0.2
+	b.add(ToyBuilder.lumpy(ToyBuilder.torus(ring, 0.04, 24, 8), 0.012, 14.0, seed), Color("16281c"),
+			at * ToyBuilder.xf(Vector3(0, 0, -0.035), Vector3(90, 0, 0)))
+	# Sprigs in rings (inner, outer, then a top layer), all lying round the
+	# wreath the same way, as they are wired onto a frame.
+	for layer: Array in [[0.16, 0.0, 13], [0.25, -0.01, 16], [0.2, 0.02, 15], [0.185, 0.045, 13], [0.225, 0.06, 11]]:
+		var r: float = layer[0]
+		for k in int(layer[2]):
+			var a := TAU * (k + rng.randf() * 0.5) / float(layer[2]) + r * 9.0
+			var length := rng.randf_range(0.13, 0.17)
+			var flare := rng.randf_range(-0.02, 0.025)
+			var points := PackedVector3Array()
+			for i in 4:
+				var f := i / 3.0
+				var turn := a + f * length / r
+				points.append(at * (Vector3(cos(turn), sin(turn), 0) * (r + flare * f) + Vector3(0, 0, float(layer[1]) + f * 0.02)))
+			var mid := a + 0.5 * length / r
+			var radial := at.basis * Vector3(cos(mid), sin(mid), 0)
+			var face := at.basis * Vector3.BACK
+			var normal := (face * 0.8 + radial * 0.45).normalized()
+			var width := length * 0.75
+			sprigs._card(points, radial * width * 0.5, normal, radial)
+			sprigs._card(points, face * width * 0.32, normal, Vector3.ZERO)
+	# Pine cones lying on the face of the wreath.
+	for deg: float in [25.0, 155.0, 205.0]:
+		var a := deg_to_rad(deg)
+		var pos := Vector3(cos(a), sin(a), 0) * ring + Vector3(0, 0, 0.085)
+		var lie := Basis(Vector3.BACK, a + rng.randf_range(-0.4, 0.4)) * Basis(Vector3.UP, PI / 2.0)
+		add_pine_cone(b, at * Transform3D(lie.scaled(Vector3.ONE * 1.1), pos), Color("8a6448"))
+	# Holly: two dark glossy leaves under a cluster of berries.
+	for deg: float in [72.0, 112.0, 330.0, 240.0]:
+		var a := deg_to_rad(deg)
+		var pos := Vector3(cos(a), sin(a), 0) * ring + Vector3(0, 0, 0.085)
+		for side: float in [-1.0, 1.0]:
+			b.finished(ToyBuilder.lumpy(ToyBuilder.sphere(1.0, 10), 0.12, 6.0, seed), Color("2e6b3b"), "leather",
+					at * ToyBuilder.xf(pos + Vector3(side * 0.032, -0.01, -0.006), Vector3(-15, side * 20, rad_to_deg(a) + side * 50),
+					Vector3(0.05, 0.02, 0.004)))
+		for n in 5:
+			var off := Vector3(rng.randf_range(-0.017, 0.017), rng.randf_range(-0.014, 0.014), rng.randf_range(0.0, 0.01))
+			b.finished(ToyBuilder.sphere(rng.randf_range(0.011, 0.014), 10), BERRY.darkened(rng.randf_range(0.0, 0.2)), "hair",
+					at * ToyBuilder.xf(pos + off + Vector3(0, 0, 0.012)))
+	# Velvet bow at the bottom: two loops, a knot and forked tails.
+	var velvet := Color("a8101c")
+	var bow := Vector3(0, -ring - 0.01, 0.09)
+	# A loop is a wide, soft band of ribbon folded round on itself.
+	var loop := ToyBuilder.lathe(PackedVector2Array([Vector2(0.036, -0.021), Vector2(0.043, -0.023),
+			Vector2(0.047, 0.0), Vector2(0.043, 0.023), Vector2(0.036, 0.021), Vector2(0.034, 0.0), Vector2(0.036, -0.021)]), 20)
+	for side: float in [-1.0, 1.0]:
+		b.finished(loop, velvet, "velvet",
+				at * ToyBuilder.xf(bow + Vector3(side * 0.058, 0.014, -0.006), Vector3(90, 0, side * -14), Vector3(1.45, 1, 0.9)))
+		var tail_top := bow + Vector3(side * 0.012, -0.015, -0.004)
+		var tail := Basis(Vector3.BACK, deg_to_rad(side * 16.0))
+		b.finished(ToyBuilder.box(Vector3(0.042, 0.12, 0.006)), velvet.darkened(0.08), "velvet",
+				at * Transform3D(tail, tail_top + tail * Vector3(0, -0.065, 0)))
+		var tip := tail_top + tail * Vector3(0, -0.12, 0)
+		for fork: float in [-1.0, 1.0]:
+			var cut := tail * Basis(Vector3.BACK, deg_to_rad(fork * 18.0))
+			b.finished(ToyBuilder.box(Vector3(0.021, 0.035, 0.006)), velvet.darkened(0.08), "velvet",
+					at * Transform3D(cut, tip + tail * Vector3(fork * 0.0105, -0.012, 0) + cut * Vector3(0, -0.012, 0)))
+	b.finished(ToyBuilder.sphere(0.024, 10), velvet.darkened(0.15), "velvet",
+			at * ToyBuilder.xf(bow + Vector3(0, 0.008, 0.014), Vector3.ZERO, Vector3(1.1, 1.0, 0.8)))
+	# It hangs from a brass nail on a ribbon behind the top.
+	b.finished(ToyBuilder.box(Vector3(0.028, 0.2, 0.004)), velvet.darkened(0.2), "velvet",
+			at * ToyBuilder.xf(Vector3(0, ring + 0.08, -0.02)))
+	b.finished(ToyBuilder.sphere(0.011, 8), GOLD.darkened(0.25), "metal",
+			at * ToyBuilder.xf(Vector3(0, ring + 0.17, -0.012), Vector3.ZERO, Vector3(1, 1, 0.5)))
+
+
+## Needle material for wreaths and garlands: still, with a little snow, and
+## none of the trees' painted crown shading.
+static func wreath_material() -> ShaderMaterial:
+	if not _cache.has("wreath"):
+		var mat: ShaderMaterial = foliage_material(0.3).duplicate()
+		mat.set_shader_parameter("wind", 0.0)
+		mat.set_shader_parameter("self_shadow", 0.0)
+		_cache["wreath"] = mat
+	return _cache["wreath"]
 
 
 ## A soft mound of snow heaped round the foot of a tree.
