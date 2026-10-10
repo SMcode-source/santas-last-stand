@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://levels/04_yule_cat/yule_cat_prowls.gd" id="1"]
+
+[node name="YuleCatProwls" type="Node"]
+script = ExtResource("1")

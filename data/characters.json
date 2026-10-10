@@ -9,5 +9,10 @@
 	"brick": {"name": "Agent Brick", "color": "#9aa5b1", "pitch": 0.5},
 	"frost": {"name": "Jack Frost", "color": "#9fd8ff", "pitch": 1.35},
 	"krampus": {"name": "Krampus", "color": "#e0573f", "pitch": 0.45},
-	"scrooge": {"name": "Ebenezer Scrooge", "color": "#c9b98a", "pitch": 0.62}
+	"scrooge": {"name": "Ebenezer Scrooge", "color": "#c9b98a", "pitch": 0.62},
+	"gryla": {"name": "Grýla", "color": "#b7c08f", "pitch": 0.55},
+	"lad": {"name": "Yule Lad", "color": "#d9b77a", "pitch": 0.85},
+	"stubby": {"name": "Stubby", "color": "#e0c27a", "pitch": 1.45},
+	"elf": {"name": "Tinsel", "color": "#8fd46a", "pitch": 1.6},
+	"redcap": {"name": "Red Cap", "color": "#d4504a", "pitch": 0.9}
 }

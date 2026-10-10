@@ -47,8 +47,16 @@
 	},
 	{
 		"id": "l4", "day": 12, "date": "12 December", "title": "The Yule Cat Prowls", "genre": "Stealth",
-		"difficulty": 5, "minutes": 12, "finale": "Set-piece finale", "scene": "", "call": "", "stinger": "",
-		"recap": "", "checkpoints": [], "hints": {}
+		"difficulty": 5, "minutes": 12, "finale": "Yule Cat chase", "scene": "res://levels/04_yule_cat/yule_cat_prowls.tscn",
+		"call": "calls/l4", "stinger": "",
+		"recap": "Grýla took six elves for her Christmas pot, and set the Yule Lads and the Yule Cat to guard the valley. Santa sneaked past them, stole the sleeping Red Caps' hats for the elves, and ran them out to the sleigh with the Cat behind. On the cave wall hung a signed photograph of a man with golden hair. And Holly's radio went silent.",
+		"checkpoints": ["barracks", "cave"],
+		"hints": {
+			"start": "Hold Ctrl or C to sneak: you're silent and much harder to see. Watch the cones, and wait for a Lad to look away. Throw a snowball somewhere else and they'll go and look at the thump.",
+			"barracks": "Grýla said it: the Cat won't eat anyone in a red cap. Sneak up to the sleeping Red Caps and press E to lift their caps. Don't walk about next to their bunks, creep. Four or more caps makes the chase much easier.",
+			"cave": "Once the cage is open, run for the sleigh along the way you came, and keep running: the elves follow your path. If the Cat gets close, turn and hit her nose with a snowball. Elves in red caps are safe, so take more caps if you keep losing elves.",
+			"lads": "Grýla stole six things from the Lads, lying about the valley. Pick one up and let its owner see you: he'll come for it and stop watching. Give three back and the Lads change sides."
+		}
 	},
 	{
 		"id": "l5", "day": 16, "date": "16 December", "title": "The Holiday Grand Prix", "genre": "Sleigh racing",

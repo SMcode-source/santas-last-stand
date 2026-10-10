@@ -22,5 +22,11 @@
 		{"who": "president", "text": "Sure, sure. And Golden Tower, total disaster of a company. Sad. I barely know them."},
 		{"who": "pepper", "text": "...Sir? How do you know that name? We haven't read it out to anyone yet."},
 		{"who": "president", "text": "Golden Tower? It's... it's what I'd call a building. If I built one. Which I might. Great call, everybody. Bye."}
+	],
+	"l4": [
+		{"who": "president", "text": "Santa! Iceland. Beautiful country. Very cold. I hear you lost contact with the wife?"},
+		{"who": "santa", "text": "...How did you—"},
+		{"who": "president", "text": "Very common. Happens to the best people. Do NOT go back. Go to Sleepy Hollow. Big race there. Huge. You'll love it."},
+		{"who": "pepper", "text": "...We never told him about Holly."}
 	]
 }

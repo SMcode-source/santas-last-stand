@@ -1,0 +1,126 @@
+{
+	"intro": [
+		{"caption": "12 December. Iceland, a valley under the fells."},
+		{"caption": "Six elves went missing from the Reykjavík depot on the 11th. The snow tracks lead here."},
+		{"who": "holly", "text": "Nick? Can you hear me? I'm at the vault. There are Red Caps here, a lot of them, and they've got the List cabinet open..."},
+		{"who": "holly", "text": "Nick, I think they're —"},
+		{"caption": "Static."},
+		{"who": "santa", "text": "Holly? HOLLY?"},
+		{"who": "gryla", "text": "Shout louder, little red man. The whole valley's awake now. Well. Most of it."},
+		{"who": "gryla", "text": "Your elves are in my pot. Not in the soup yet. I'm waiting for them to plump up."},
+		{"choice": [
+			{"text": "Grýla! You haven't changed a bit. Still hungry?", "tone": "jolly", "then": [
+				{"who": "gryla", "text": "Always. Twelve hundred years and I've never once been full."}
+			]},
+			{"text": "Let them go. Now.", "tone": "stern", "then": [
+				{"who": "gryla", "text": "Or what? You'll leave me coal? I eat coal."}
+			]},
+			{"text": "Who sold you on elf stew, Grýla? It's very stringy.", "tone": "sardonic", "then": [
+				{"who": "gryla", "text": "A man with gold on his hair. He said the cat can eat anyone it likes."}
+			]}
+		]},
+		{"who": "gryla", "text": "The gold-man said the cat can eat anyone it likes. Except the ones in red caps."},
+		{"who": "gryla", "text": "Kisa! Watch the valley, my lovely. And my boys will watch it too."},
+		{"caption": "The Yule Cat pads down off the cliff. Below, thirteen pairs of eyes open in the dark."}
+	],
+	"intro_help": [
+		{"who": "santa", "text": "Thirteen Yule Lads and a cat the size of a pony. Right. Ctrl to creep, keep to the shadows, and nobody gets a good look at me."}
+	],
+	"lad_spot": [
+		{"who": "santa", "text": "Easy... he's squinting this way. Out of his sight, quick, or he'll yell for the cat."}
+	],
+	"cat_spot": [
+		{"who": "santa", "text": "The Cat's looking right at me. Don't move. Don't even jingle."}
+	],
+	"cat_near": [
+		{"who": "santa", "text": "There she is. If she hears me running, I'm dinner. Creep, Nick. Creep."}
+	],
+	"first_treasure": [
+		{"who": "santa", "text": "{thing}. That's the {lad}'s! Grýla must have taken it off him. If he sees me with it, I'll bet he comes straight over for it."}
+	],
+	"treasure": [
+		{"who": "santa", "text": "{thing}. The {lad} will want this back."}
+	],
+	"returned_1": [
+		{"who": "lad", "text": "My... my {thing}! Mother said it was gone for good."},
+		{"who": "lad", "text": "...I didn't see you. Go on."}
+	],
+	"returned_2": [
+		{"who": "lad", "text": "{thing}! The red man brought it back. She never gives anything back."},
+		{"caption": "Two Lads, whispering behind a turf wall: 'Why are we guarding her pot, anyway?'"}
+	],
+	"mutiny": [
+		{"who": "lad", "text": "Three of us! He gave back three!"},
+		{"who": "stubby", "text": "Mother takes our things. The Cat bites our ankles. And the gold-man brought her a pot big enough for SIX."},
+		{"who": "lad", "text": "Every year, children leave us shoes in the window. This one leaves us our own spoons back!"},
+		{"who": "stubby", "text": "We're not watching for her any more. The sheep gate's open, red man. Take the old track up the west side. Nobody looks there."},
+		{"caption": "The Yule Lads are on your side now."}
+	],
+	"barracks": [
+		{"who": "santa", "text": "Red Caps. Asleep, all six of them. 'Except the ones in red caps'... Grýla, you've just told me how to get my elves home."}
+	],
+	"cap_wont_fit": [
+		{"who": "santa", "text": "Got one. Too small for me, but it'll fit an elf a treat. One for each of them, if I can manage it."}
+	],
+	"cap_taken": [
+		{"who": "santa", "text": "Sleep tight. Mind the draught."}
+	],
+	"caps_all": [
+		{"who": "santa", "text": "Six caps, six elves. Now for the cave."}
+	],
+	"redcap_stir": [
+		{"who": "redcap", "text": "Wha—! Who's there? ...Mmf. Dreaming about chimneys again."}
+	],
+	"door_barred": [
+		{"who": "santa", "text": "There. Slam that, my lad."},
+		{"caption": "BANG. BANG. Muffled Icelandic."}
+	],
+	"cave_enter": [
+		{"who": "santa", "text": "That's her, snoring. And that's my elves, in a cage, next to a pot. Of course it is."},
+		{"who": "santa", "text": "Once I open that cage, it'll be a dash for the sleigh with the Cat behind us. Best be ready."}
+	],
+	"headshot": [
+		{"caption": "A signed photograph in a gilt frame: a man with very golden hair, giving a thumbs-up."},
+		{"caption": "'To Grýla — a fantastic ogre. The best.'"},
+		{"who": "santa", "text": "...The gold-man."}
+	],
+	"free": [
+		{"who": "elf", "text": "SANTA! You came! She was going to put us in with the turnips!"},
+		{"who": "santa", "text": "Shh! Not a peep. Quick now, put these on."}
+	],
+	"free_no_caps": [
+		{"who": "elf", "text": "Put what on? You haven't got anything, Santa."},
+		{"who": "santa", "text": "...Then we run. Fast. Stay right behind me."}
+	],
+	"free_few_caps": [
+		{"who": "elf", "text": "{caps} red caps for six of us? Ooh, tight. The rest of us will just have to be quick."}
+	],
+	"free_caps": [
+		{"who": "elf", "text": "Red caps! The Cat won't touch the ones in red caps, everybody knows that. Cap on, everyone!"}
+	],
+	"chase": [
+		{"who": "gryla", "text": "KISA! DINNER'S RUNNING AWAY!"},
+		{"who": "santa", "text": "Elves, stay on my heels! To the sleigh, RUN!"}
+	],
+	"cat_leaps": [
+		{"who": "elf", "text": "She's off the cliff! She's coming!"}
+	],
+	"cat_stunned": [
+		{"who": "santa", "text": "Right on the nose! Keep going!"}
+	],
+	"snatched": [
+		{"who": "elf", "text": "{elf}! NO! The Cat's got {elf}!"}
+	],
+	"capped_pass": [
+		{"who": "elf", "text": "She sniffed right past me! The caps WORK!"}
+	],
+	"outro": [
+		{"caption": "Blitzen shakes his harness. Sleigh bells ring out across the valley, and the Yule Cat bolts."},
+		{"who": "santa", "text": "Bells. She never could stand them. In you get, all {kept} of you."},
+		{"who": "stubby", "text": "Red man! This way, round the back of the fish racks. Mother's coming down the cliff."},
+		{"caption": "The Yule Lads lead the sleigh out under the fells. Grýla's bellowing fades behind the hills."},
+		{"who": "santa", "text": "Holly? Holly, come in. We've got them."},
+		{"caption": "Static."},
+		{"who": "santa", "text": "...Holly?"}
+	]
+}

@@ -61,6 +61,7 @@ jobs:
           test -f baked/workshop_set.scn
           test -f baked/village_set.scn
           test -f baked/boardroom_set.scn
+          test -f baked/yule_valley_set.scn
 
       - name: Export web build
         run: |

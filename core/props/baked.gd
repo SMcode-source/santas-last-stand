@@ -19,6 +19,7 @@ static func recipes() -> Dictionary:
 		"workshop_set": WorkshopSet.build,
 		"village_set": VillageSet.build,
 		"boardroom_set": BoardroomSet.build,
+		"yule_valley_set": YuleValleySet.build,
 	}
 
 

@@ -6,6 +6,8 @@ extends Node3D
 ## take_hit(hit) if it (or a parent) has one, and bursts into a puff of snow.
 
 signal hit_landed(target: Node, at: Vector3)
+## Any snowball bursting on anything (a thump someone might hear).
+signal splashed(at: Vector3)
 
 const RADIUS := 0.1
 ## Seconds a snowball flies before it is put back unused.
@@ -102,6 +104,7 @@ func _strike(i: int, hit: Dictionary) -> void:
 		hit_landed.emit(receiver, at)
 	_ages[i] = -1.0
 	_burst(at, hit["normal"])
+	splashed.emit(at)
 
 
 ## The node that takes a hit on `collider`: the first of it and its parents
